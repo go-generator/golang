@@ -1,7 +1,7 @@
 package controller
 
 import (
-	. "../../auth-service"
+	. "../../ldap-authentication"
 	"encoding/json"
 	"github.com/common-go/auth"
 	. "github.com/common-go/echo"

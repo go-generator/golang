@@ -1,7 +1,7 @@
 package impl
 
 import (
-  . "../../../auth-service"
+  . "../../../ldap-authentication"
   "github.com/common-go/auth"
   "time"
 )
