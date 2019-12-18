@@ -1,19 +1,6 @@
 server:
   name: BO-TRIPAL
-  version: v1
   port: 3000
-  shutdownTimeout: 0
-  logging: false
-  monitoring: false
-  https: false
-
-database:
-  dialect: postgres
-  host: localhost
-  port: 5432
-  database: demo2
-  user: postgres
-  password: abcd1234
 
 mongo:
   uri: mongodb://admin:12345678x%40X@10.1.0.234:27017
