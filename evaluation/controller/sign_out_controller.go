@@ -1,7 +1,6 @@
 package controller
 
-import
-(
+import (
 	//"../../core-echo/builder"
 	. "github.com/common-go/echo"
 	//"context"
