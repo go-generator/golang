@@ -1,0 +1,16 @@
+server:
+  name: evaluation
+  port: 3002
+
+ms_landing_url: http://localhost:3002/
+
+ldap:
+  server: 192.168.1.234:389
+  binding_format: uid=%s,ou=users,dc=tma,dc=com,dc=vn
+token:
+  secret: secrettma
+  expires: 86400000
+
+mongo:
+  uri: mongodb://localhost:27017
+  database: evaluation
