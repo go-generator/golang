@@ -132,7 +132,7 @@ func (c *LocationController) GetLocationByTypeInRadius() echo.HandlerFunc {
 func (c *LocationController) NewModel(body interface{}) (out LocationRate) {
 	var result LocationRate
 	//modelType := reflect.TypeOf(Booking{})
-	//req := reflect.New(modelType).Interface()
+	//req := reflect.StatusNew(modelType).Interface()
 	if body != nil {
 		switch s := body.(type) {
 		case io.Reader:

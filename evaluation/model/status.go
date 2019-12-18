@@ -3,9 +3,9 @@ package model
 type Status string
 
 const (
-	New       Status = "N"
-	Submitted Status = "S"
-	Approved  Status = "A"
+	StatusNew       Status = "N"
+	StatusSubmitted Status = "S"
+	StatusApproved  Status = "A"
 )
 
 //func (s Status) String() string {

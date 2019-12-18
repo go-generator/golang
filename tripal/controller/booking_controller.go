@@ -149,7 +149,7 @@ func (c *BookingController) NewModel1(body interface{}) (out map[string]interfac
 func (c *BookingController) NewModel(body interface{}) (out Booking) {
 	var result Booking
 	//modelType := reflect.TypeOf(Booking{})
-	//req := reflect.New(modelType).Interface()
+	//req := reflect.StatusNew(modelType).Interface()
 	if body != nil {
 		switch s := body.(type) {
 		case io.Reader:
