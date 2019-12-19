@@ -1,8 +1,9 @@
 package service
 
 import (
-	. "../model"
 	"context"
+
+	. "../model"
 	. "github.com/common-go/search"
 	. "github.com/common-go/service"
 )

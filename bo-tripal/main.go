@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+	"os"
+	"strconv"
+
 	c "./config"
 	"./route"
 	"github.com/common-go/config"
 	"github.com/labstack/echo"
-	"log"
-	"os"
-	"strconv"
 )
 
 func main() {

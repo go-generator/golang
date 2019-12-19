@@ -1,17 +1,18 @@
 package impl
 
 import (
-	"../../model"
 	"context"
 	"encoding/json"
+	"reflect"
+	"strings"
+	"time"
+
+	"../../model"
 	m "github.com/common-go/mongo"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type BookingServiceImpl struct {

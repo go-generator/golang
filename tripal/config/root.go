@@ -6,6 +6,6 @@ import (
 )
 
 type Root struct {
-	Server   app.ServerConfig   `mapstructure:"server"`
-	Mongo    mongo.MongoConfig  `mapstructure:"mongo"`
+	Server app.ServerConfig  `mapstructure:"server"`
+	Mongo  mongo.MongoConfig `mapstructure:"mongo"`
 }

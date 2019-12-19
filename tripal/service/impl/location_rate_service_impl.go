@@ -1,10 +1,11 @@
 package impl
 
 import (
+	"reflect"
+
 	"../../model"
 	m "github.com/common-go/mongo"
 	"go.mongodb.org/mongo-driver/mongo"
-	"reflect"
 )
 
 type LocationRateServiceImpl struct {

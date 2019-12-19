@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"reflect"
+
 	. "../search-model"
 	. "../service"
 	. "github.com/common-go/echo"
-	"reflect"
 )
 
 type LocationRateController struct {
