@@ -1,0 +1,14 @@
+{
+  "projectName": "NONONO",
+  "rootPath": "a/b",
+  "files": [
+    {
+      "name": "c/file1.txt",
+      "content": "dsf"
+    },
+    {
+      "name": "d/file2.txt",
+      "content": "sdaf"
+    }
+  ]
+}
