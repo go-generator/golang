@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	defaultFileName = "input.json"
+	defaultFileName    = "input.json"
+	defaultProjectName = "default-project"
 )
 
 type Input struct {
@@ -51,24 +52,25 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	input.RootPath = strings.TrimSuffix(input.RootPath, "/")
+	if input.RootPath != "" {
+		err = os.MkdirAll(input.RootPath, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+		input.RootPath += "/"
+	}
 
 	//CREATE FOLDER ON DISK
-
-	err = os.MkdirAll(input.RootPath, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
 	for i := range input.Files {
-		tmpPath := input.RootPath + "/" + input.Files[i].Name
+		tmpPath := input.RootPath + input.Files[i].Name
 		tmp := strings.LastIndex(tmpPath, "/")
 		tmpPath = tmpPath[:tmp]
 		err = os.MkdirAll(tmpPath, os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
-		f, err := os.Create(input.RootPath + "/" + input.Files[i].Name)
+		f, err := os.Create(input.RootPath + input.Files[i].Name)
 		if err != nil {
 			panic(err)
 		}
@@ -84,12 +86,10 @@ func main() {
 	fmt.Println(strconv.Itoa(len(input.Files)) + " files created on disk")
 
 	//New-style ZIP
-
-	err = os.MkdirAll(input.RootPath, os.ModePerm)
-	if err != nil {
-		panic(err)
+	if input.ProjectName == "" {
+		input.ProjectName = defaultProjectName
 	}
-	newZipFile, err := os.Create(input.RootPath + "/" + input.ProjectName + ".zip")
+	newZipFile, err := os.Create(input.RootPath + input.ProjectName + ".zip")
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,18 @@
+{
+ "projectName": "",
+ "rootPath": "",
+ "files": [
+  {
+   "name": "service/batch_service.go",
+   "content": "package service\n\nimport (\n\t\"github.com/common-go/search\"\n\t\"github.com/common-go/service\"\n)\ntype BatchService interface {\n\tservice.GenericService\n\tsearch.SearchService\n}\n"
+  },
+  {
+   "name": "service/candidate_service.go",
+   "content": "package service\n\nimport (\n\t\"github.com/common-go/search\"\n\t\"github.com/common-go/service\"\n)\ntype CandidateService interface {\n\tservice.GenericService\n\tsearch.SearchService\n}\n"
+  },
+  {
+   "name": "service/candidate_evaluation_service.go",
+   "content": "package service\n\nimport (\n\t\"github.com/common-go/search\"\n\t\"github.com/common-go/service\"\n)\ntype CandidateEvaluationService interface {\n\tservice.GenericService\n\tsearch.SearchService\n}\n"
+  }
+ ]
+}

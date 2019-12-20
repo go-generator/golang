@@ -1,0 +1,4 @@
+{
+  "env": ["service"],
+  "entity": ["Batch","Candidate","CandidateEvaluation"]
+}
