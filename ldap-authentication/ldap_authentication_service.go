@@ -20,11 +20,11 @@ type LDAPAuthenticationService struct {
 func (s *LDAPAuthenticationService) Authenticate(info auth.AuthInfo) (auth.AuthResult, error) {
 	if len(strings.TrimSpace(info.UserName)) == 0 && len(strings.TrimSpace(info.Password)) == 0 {
 		result0 := auth.AuthResult {}
-		result0.Status = auth.Fail
+		result0.Status = auth.StatusFail
 		return result0, nil
 	}
 	result, er0 := s.loginLDAP(info)
-	if er0 != nil || result.Status != auth.Success && result.Status != auth.SuccessAndReactivated {
+	if er0 != nil || result.Status != auth.StatusSuccess && result.Status != auth.StatusSuccessAndReactivated {
 		return result, er0
 	}
 	user, er1 := s.UserInfoService.GetUserInfo(info)
@@ -32,15 +32,15 @@ func (s *LDAPAuthenticationService) Authenticate(info auth.AuthInfo) (auth.AuthR
 		return result, er1
 	}
 	if !s.isAccessDateValid(user.AccessDateFrom, user.AccessDateTo) {
-		result.Status = auth.Disabled
+		result.Status = auth.StatusDisabled
 		return result, nil
 	}
 	if !s.isAccessTimeValid(user.AccessTimeFrom, user.AccessTimeTo) {
-		result.Status = auth.AccessTimeLocked
+		result.Status = auth.StatusAccessTimeLocked
 		return result, nil
 	}
 	if user == nil {
-		result.Status = auth.Fail
+		result.Status = auth.StatusFail
 		result.Message = "UserNotExisted"
 		return result, nil
 	}
@@ -70,10 +70,10 @@ func (s *LDAPAuthenticationService) loginLDAP(info auth.AuthInfo) (auth.AuthResu
 	result := auth.AuthResult{}
 	account := auth.UserAccount{}
 	userName := info.UserName
-	result.Status = auth.Fail
+	result.Status = auth.StatusFail
 
 	if userName == "bank2" || userName == "bank3" {
-		result.Status = auth.Success
+		result.Status = auth.StatusSuccess
 		result.User = &account
 		return result, nil
 	}
@@ -88,7 +88,7 @@ func (s *LDAPAuthenticationService) loginLDAP(info auth.AuthInfo) (auth.AuthResu
 	usernameBinding := fmt.Sprintf(s.LDAPConfig.BindingFormat, info.UserName)
 	er2 := l.Bind(usernameBinding, info.Password)
 	if er2 != nil {
-		result.Status = auth.Fail
+		result.Status = auth.StatusFail
 	} else {
 		searchRequest := ldap.NewSearchRequest(
 			usernameBinding,
@@ -106,7 +106,7 @@ func (s *LDAPAuthenticationService) loginLDAP(info auth.AuthInfo) (auth.AuthResu
 		account.DisplayName = sr.Entries[0].GetAttributeValue("displayName")
 		account.Email = sr.Entries[0].GetAttributeValue("mail")
 		result.User = &account
-		result.Status = auth.Success
+		result.Status = auth.StatusSuccess
 	}
 	return result, nil
 }
@@ -125,16 +125,16 @@ func mapUserInfoToUserAccount(user auth.UserInfo, account auth.UserAccount) auth
 	return account
 }
 
-func (s *LDAPAuthenticationService) setTokenExpiredTime(user auth.UserInfo) (time.Time, uint64) {
+func (s *LDAPAuthenticationService) setTokenExpiredTime(user auth.UserInfo) (time.Time, int64) {
 	if user.AccessTimeTo.Before(*user.AccessTimeFrom) || user.AccessTimeTo.Equal(*user.AccessTimeFrom) {
 		tmp := user.AccessTimeTo.Add(time.Hour * 24)
 		user.AccessTimeTo = &tmp
 	}
 	var tokenExpiredTime time.Time
-	var jwtExpiredTime uint64
+	var jwtExpiredTime int64
 	if time.Millisecond*time.Duration(s.TokenConfig.Expires) > user.AccessTimeTo.Sub(time.Now()) {
 		tokenExpiredTime = time.Now().Add(user.AccessTimeTo.Sub(time.Now())).UTC()
-		jwtExpiredTime = uint64(user.AccessTimeTo.Sub(time.Now()).Seconds() * 1000)
+		jwtExpiredTime = int64(user.AccessTimeTo.Sub(time.Now()).Seconds() * 1000)
 	} else {
 		tokenExpiredTime = time.Now().Add(time.Millisecond * time.Duration(s.TokenConfig.Expires)).UTC()
 		jwtExpiredTime = s.TokenConfig.Expires

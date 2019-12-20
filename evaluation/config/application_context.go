@@ -23,8 +23,8 @@ func (t *JwtTokenVerifier) VerifyToken(tokenString string, secret string) (inter
 type JwtTokenGenerator struct {
 }
 
-func (t *JwtTokenGenerator) GenerateToken(payload interface{}, secret string, expiresIn uint64) (string, error) {
-	return jwt.GenerateToken(payload, secret, expiresIn)
+func (t *JwtTokenGenerator) GenerateToken(payload interface{}, secret string, expiresIn int64) (string, error) {
+	return jwt.GenerateToken(payload, secret, uint64(expiresIn))
 }
 
 type ApplicationContext struct {

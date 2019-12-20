@@ -15,10 +15,10 @@ func (s *LDAPAuthenticator) Authenticate(info auth.AuthInfo) (auth.AuthResult, e
 	result := auth.AuthResult{}
 	account := auth.UserAccount{}
 	userName := info.UserName
-	result.Status = auth.Fail
+	result.Status = auth.StatusFail
 
 	if userName == "bank2" || userName == "bank3" {
-		result.Status = auth.Success
+		result.Status = auth.StatusSuccess
 		result.User = &account
 		return result, nil
 	}
@@ -33,7 +33,7 @@ func (s *LDAPAuthenticator) Authenticate(info auth.AuthInfo) (auth.AuthResult, e
 	usernameBinding := fmt.Sprintf(s.LDAPConfig.BindingFormat, info.UserName)
 	er2 := l.Bind(usernameBinding, info.Password)
 	if er2 != nil {
-		result.Status = auth.Fail
+		result.Status = auth.StatusFail
 	} else {
 		searchRequest := ldap.NewSearchRequest(
 			usernameBinding,
@@ -51,7 +51,7 @@ func (s *LDAPAuthenticator) Authenticate(info auth.AuthInfo) (auth.AuthResult, e
 		account.DisplayName = sr.Entries[0].GetAttributeValue("displayName")
 		account.Email = sr.Entries[0].GetAttributeValue("mail")
 		result.User = &account
-		result.Status = auth.Success
+		result.Status = auth.StatusSuccess
 	}
 	return result, nil
 }

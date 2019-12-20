@@ -30,7 +30,7 @@ func (c *AuthenticationController) Authenticate() echo.HandlerFunc {
 		}
 		result, er2 := c.AuthenticationService.Authenticate(user)
 		if er2 != nil {
-			result.Status = auth.Fail
+			result.Status = auth.StatusFail
 			log.Fatal(er2)
 		}
 		return ctx.JSON(http.StatusOK, result)
