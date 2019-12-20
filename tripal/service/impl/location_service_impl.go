@@ -1,18 +1,19 @@
 package impl
 
 import (
-	"../../model"
-	"../../service"
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+
+	"../../model"
+	"../../service"
 	m "github.com/common-go/mongo"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"reflect"
-	"strings"
 )
 
 type LocationServiceImpl struct {

@@ -1,12 +1,13 @@
 package controller
 
 import (
-	. "github.com/common-go/echo"
+	"reflect"
+
 	. "../model"
 	. "../search-model"
 	. "../service"
+	. "github.com/common-go/echo"
 	"github.com/common-go/validator"
-	"reflect"
 )
 
 type TripController struct {

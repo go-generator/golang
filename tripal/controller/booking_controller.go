@@ -1,17 +1,18 @@
 package controller
 
 import (
-	. "../model"
-	. "../search-model"
-	. "../service"
 	"encoding/json"
 	"fmt"
-	. "github.com/common-go/echo"
-	"github.com/labstack/echo"
 	"io"
 	"log"
 	"net/http"
 	"reflect"
+
+	. "../model"
+	. "../search-model"
+	. "../service"
+	. "github.com/common-go/echo"
+	"github.com/labstack/echo"
 )
 
 type BookingController struct {

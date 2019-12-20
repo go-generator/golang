@@ -1,17 +1,18 @@
 package builder
 
 import (
-	"../model"
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+
+	"../model"
 	. "github.com/common-go/mongo"
 	. "github.com/common-go/search"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"reflect"
 )
 
 type LocationSearchResultBuilder struct {

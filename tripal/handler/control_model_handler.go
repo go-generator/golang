@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"../model"
 	"context"
-	"github.com/common-go/echo"
-	"github.com/google/uuid"
 	"reflect"
 	"strings"
 	"time"
+
+	"../model"
+	"github.com/common-go/echo"
+	"github.com/google/uuid"
 )
 
 type ControlModelHandler struct {

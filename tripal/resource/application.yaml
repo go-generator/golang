@@ -4,5 +4,5 @@ server:
 
 mongo:
   uri: mongodb://admin:12345678x%40X@10.1.0.234:27017
-#  uri: mongodb://localhost:27017
+  #  uri: mongodb://localhost:27017
   database: tripal

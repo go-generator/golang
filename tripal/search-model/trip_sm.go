@@ -1,9 +1,10 @@
 package message
 
 import (
+	"time"
+
 	. "../model"
 	"github.com/common-go/search"
-	"time"
 )
 
 type TripSM struct {

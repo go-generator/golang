@@ -1,19 +1,20 @@
 package controller
 
 import (
-	"../handler"
-	. "../model"
-	. "../search-model"
-	. "../service"
 	"encoding/json"
-	. "github.com/common-go/echo"
-	"github.com/common-go/validator"
-	"github.com/labstack/echo"
 	"io"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
+
+	"../handler"
+	. "../model"
+	. "../search-model"
+	. "../service"
+	. "github.com/common-go/echo"
+	"github.com/common-go/validator"
+	"github.com/labstack/echo"
 )
 
 type LocationController struct {
