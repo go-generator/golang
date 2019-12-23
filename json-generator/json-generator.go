@@ -10,7 +10,10 @@ import (
 )
 
 const (
-	defaultFileName = "input.json"
+	defaultFileName    = "input.json"
+	defaultTemplate    = "template.txt"
+	defaultRootPath    = ""
+	defaultProjectName = "project"
 )
 
 type Input struct {
@@ -32,8 +35,17 @@ func main() {
 	//READ THE JSON INPUT
 
 	filename := defaultFileName
+	templateFile := defaultTemplate
+	rootPath := defaultRootPath
 	if len(os.Args) > 1 {
 		filename = os.Args[1]
+	}
+	if len(os.Args) > 2 {
+		templateFile = os.Args[2]
+	}
+	if len(os.Args) > 3 {
+		rootPath = os.Args[3]
+		rootPath = strings.TrimSuffix(rootPath, "/")
 	}
 	jsonFile, err := os.Open(filename)
 	if err != nil {
@@ -55,7 +67,7 @@ func main() {
 	}
 
 	//READ THE TEMPLATE FILE
-	content, err := ioutil.ReadFile("template.txt")
+	content, err := ioutil.ReadFile(templateFile)
 	if err != nil {
 		panic(err)
 	}
@@ -67,14 +79,19 @@ func main() {
 			text := template
 			text = strings.ReplaceAll(text, "{env}", input.Env[i])
 			text = strings.ReplaceAll(text, "{entity}", input.Entity[j])
-			filename := FileNameConverter(input.Entity[j], input.Env[i])
+			text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Entity[j])[0])+input.Entity[j][1:])
+			filename := FileNameConverter(input.Entity[j], rootPath, input.Env[i])
 			output.Files = append(output.Files, File{input.Env[i] + "/" + filename, text})
 		}
 	}
+	output.RootPath = rootPath
+	output.ProjectName = defaultProjectName
 	file, _ := json.MarshalIndent(output, "", " ")
 	_ = ioutil.WriteFile("output.json", file, 0644)
 }
-func FileNameConverter(s string, ss string) string {
+
+//Convert SomeThing to some_thing
+func FileNameConverter(s string, rootPath string, ss string) string {
 	s2 := strings.ToLower(s)
 	s3 := ""
 	for i := range s {
@@ -84,5 +101,10 @@ func FileNameConverter(s string, ss string) string {
 			s3 += string(s2[i])
 		}
 	}
-	return s3[1:] + "_" + ss + ".go"
+	rootPath = strings.ReplaceAll(rootPath, "/", "_")
+	if rootPath != "" {
+		return s3[1:] + "_" + rootPath + "_" + ss + ".go"
+	} else {
+		return s3[1:] + "_" + ss + ".go"
+	}
 }
