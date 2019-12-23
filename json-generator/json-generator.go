@@ -1,5 +1,5 @@
 //USAGE INSTRUCTIONS
-//Example: "go run main.go filename.json", without filename.json provided, default filename will be "input.json"
+//Example: "go run main.go input.json template.txt rootPath", without filename.json provided, default filename will be "input.json"...
 package main
 
 import (

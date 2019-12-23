@@ -1,0 +1,4 @@
+{
+  "env": ["controller"],
+  "entity": ["Batch","Candidate","CandidateEvaluation"]
+}
