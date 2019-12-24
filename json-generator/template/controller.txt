@@ -1,0 +1,26 @@
+package {env}
+
+import (
+	"../handler"
+	"../model"
+	"../search-model"
+	"../service"
+	. "github.com/common-go/echo"
+	"reflect"
+)
+
+type {entity}Controller struct {
+	*GenericController
+	*SearchController
+}
+
+
+func New{entity}Controller({entityLowerFirstCharacter}Service service.{entity}Service, logService ActivityLogService) *{entity}Controller {
+	var {entityLowerFirstCharacter}Model model.{entity}
+	modelType := reflect.TypeOf({entityLowerFirstCharacter}Model)
+	searchModelType := reflect.TypeOf(search_model.{entity}SM{})
+	idNames := {entityLowerFirstCharacter}Service.GetIdNames()
+	controlModelHandler := handler.NewControlModelHandler(idNames)
+	genericController, searchController:= NewGenericSearchController({entityLowerFirstCharacter}Service, modelType, controlModelHandler, {entityLowerFirstCharacter}Service, searchModelType,nil, logService, true, "")
+	return &{entity}Controller{GenericController: genericController, SearchController: searchController}
+}
