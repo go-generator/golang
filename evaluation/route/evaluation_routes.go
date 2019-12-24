@@ -14,8 +14,6 @@ type EvaRoutes struct {
 }
 
 func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig, ldapConfig ldap.LDAPConfig, tokenConfig auth.TokenConfig) (*EvaRoutes, error) {
-	//httpMethods := []string{"GET", "POST"}
-	//applicationContext, _ := config.NewApplicationContext(msLandingUrl)
 	applicationContext, err := config.NewApplicationContext(mongoConfig, ldapConfig, tokenConfig)
 	if err != nil {
 		return nil, err
@@ -35,20 +33,8 @@ func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig, ldapConfig
 	e.POST(batchPath+"/search", batchController.Search())
 	e.PUT(batchPath+"/:id", batchController.Update())
 
-	//group routes with /user prefix
-	//g := e.Group("/user")
-	//use middleware for group
-	//g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-	//	if username == "admin" && password == "123" {
-	//		return true, nil
-	//	}
-	//	return false, nil
-	//}))
-	//g.Match(httpMethods, "/getFeed", applicationContext.LandingController.GetFeedContent)
-	//e.POST("/user/getFeed", applicationContext.LandingController.GetFeedContent)
-	//scheme
 	schemeController := applicationContext.SchemeController
-	schemePath :=  "/evaluation/scheme"
+	schemePath := "/evaluation/scheme"
 	e.GET(schemePath, schemeController.GetAll())
 	e.POST(schemePath, schemeController.Insert())
 	e.GET(schemePath+"/:id", schemeController.GetById())
@@ -80,7 +66,6 @@ func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig, ldapConfig
 	signOutController := applicationContext.SignOutController
 	signOutPath := "/authentication/signout/:userName"
 	e.GET(signOutPath, signOutController.SignOut())
-
 
 	return &EvaRoutes{e}, nil
 }

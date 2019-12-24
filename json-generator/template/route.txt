@@ -1,0 +1,44 @@
+package route
+
+import (
+	ldap "../../ldap-authentication"
+	"../config"
+	"github.com/common-go/auth"
+	"github.com/common-go/mongo"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+)
+
+type EvaRoutes struct {
+	Router *echo.Echo
+}
+
+func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig, ldapConfig ldap.LDAPConfig, tokenConfig auth.TokenConfig) (*EvaRoutes, error) {
+	applicationContext, err := config.NewApplicationContext(mongoConfig, ldapConfig, tokenConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	//middle for all routes
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	authenticationController := applicationContext.AuthenticationController
+	e.POST("/authentication/authenticate", authenticationController.Authenticate())
+
+	//signOut
+	signOutController := applicationContext.SignOutController
+	signOutPath := "/authentication/signout/:userName"
+	e.GET(signOutPath, signOutController.SignOut())
+    {begin}
+	{entityLowerFirstCharacter}Controller := applicationContext.{entity}Controller
+	{entityLowerFirstCharacter}Path := "/evaluation/{entityLowerFirstCharacter}"
+	e.GET({entityLowerFirstCharacter}Path, {entityLowerFirstCharacter}Controller.GetAll())
+	e.POST({entityLowerFirstCharacter}Path, {entityLowerFirstCharacter}Controller.Insert())
+	e.GET({entityLowerFirstCharacter}Path+"/:id", {entityLowerFirstCharacter}Controller.GetById())
+	e.POST({entityLowerFirstCharacter}Path+"/search", {entityLowerFirstCharacter}Controller.Search())
+	e.PUT({entityLowerFirstCharacter}Path+"/:id", {entityLowerFirstCharacter}Controller.Update())
+	{end}
+
+	return &EvaRoutes{e}, nil
+}

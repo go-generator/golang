@@ -15,7 +15,7 @@ import (
 const (
 	defaultFileName       = "input.json"
 	defaultRootPath       = ""
-	defaultProjectName    = "project"
+	defaultProjectName    = "evaluation"
 	defaultTemplateFolder = "template"
 )
 
@@ -71,6 +71,8 @@ func main() {
 	}
 
 	//WRITE THE OUT STRUCT
+	output.RootPath = rootPath
+	output.ProjectName = defaultProjectName
 	for k := range input.Folders {
 		for i := range input.Folders[k].RawEnv {
 			//Convert RawEnv to Env
@@ -83,18 +85,42 @@ func main() {
 				panic(err)
 			}
 			template := string(content)
-			for j := range input.Folders[k].Entity {
+			if strings.Contains(template, "{begin}") {
 				text := template
-				text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
-				text = strings.ReplaceAll(text, "{entity}", input.Folders[k].Entity[j])
-				text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:])
-				filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
+				for strings.Contains(text, "{begin}") {
+					begin := strings.Index(text, "{begin}")
+					end := strings.Index(text, "{end}")
+					envCount := strings.Count(text[begin:end], "{env}")
+					entityCount := strings.Count(text[begin:end], "{entity}")
+					entityLowerFirstCharacterCount := strings.Count(text[begin:end], "{entityLowerFirstCharacter}")
+					tmpText := text[:end+len("{end}")]
+					for j := 0; j < len(input.Folders[k].Entity)-1; j++ {
+						tmpText += text[begin+len("{begin}") : end-1]
+					}
+					text = tmpText + text[end+len("{end}"):]
+
+					for j := range input.Folders[k].Entity {
+						text = strings.Replace(text, "{env}", input.Folders[k].Env[i], envCount)
+						text = strings.Replace(text, "{entity}", input.Folders[k].Entity[j], entityCount)
+						text = strings.Replace(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:], entityLowerFirstCharacterCount)
+					}
+					text = strings.Replace(text, "{begin}", "", 1)
+					text = strings.Replace(text, "{end}", "", 1)
+				}
+				filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].RawEnv[i])
 				output.Files = append(output.Files, File{input.Folders[k].RawEnv[i] + "/" + filename, text})
+			} else {
+				for j := range input.Folders[k].Entity {
+					text := template
+					text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
+					text = strings.ReplaceAll(text, "{entity}", input.Folders[k].Entity[j])
+					text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:])
+					filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
+					output.Files = append(output.Files, File{input.Folders[k].RawEnv[i] + "/" + filename, text})
+				}
 			}
 		}
 	}
-	output.RootPath = rootPath
-	output.ProjectName = defaultProjectName
 
 	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
 	if output.RootPath != "" {
