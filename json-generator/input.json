@@ -1,4 +1,12 @@
 {
-  "env": ["service"],
-  "entity": ["Batch","Candidate","CandidateEvaluation"]
+  "folders": [
+    {
+      "env": [
+        "controller","service","service/impl"
+      ],
+      "entity": [
+        "Batch","Candidate","CandidateEvaluation"
+      ]
+    }
+  ]
 }

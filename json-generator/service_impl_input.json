@@ -1,4 +1,0 @@
-{
-  "env": ["impl"],
-  "entity": ["Batch","Candidate","CandidateEvaluation"]
-}
