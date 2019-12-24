@@ -2,7 +2,7 @@ package config
 
 import (
 	as "../../ldap-authentication"
-	. "../controller"
+	. "./controller"
 	"../service/impl"
 	"context"
 	"fmt"
@@ -28,12 +28,12 @@ func (t *JwtTokenGenerator) GenerateToken(payload interface{}, secret string, ex
 }
 
 type ApplicationContext struct {
-	BatchController               *BatchController
-	SchemeController              *SchemeController
-	CandidateController           *CandidateController
-	AuthenticationController      *AuthenticationController
-	CandidateEvaluationController *CandidateEvaluationController
-	SignOutController             *SignOutController
+	BatchController 							*BatchController
+	SchemeController 							*SchemeController
+	CandidateController 						*CandidateController
+	AuthenticationController 					*AuthenticationController
+	CandidateEvaluationController 				*CandidateEvaluationController
+	SignOutController 							*SignOutController
 }
 
 func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConfig, tokenConfig auth.TokenConfig) (*ApplicationContext, error) {
@@ -42,11 +42,6 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConf
 	if er1 != nil {
 		return nil, er1
 	}
-	//
-	//db, er2 := sql.CreatePool(dbConfig)
-	//if er2 != nil {
-	//	return nil, er2
-	//}
 
 	mongoQueryBuilder := &mongo.DefaultQueryBuilder{}
 	mongoSortBuilder := &mongo.DefaultSortBuilder{}
@@ -65,28 +60,18 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConf
 
 	tokenGenerator := &JwtTokenGenerator{}
 	ldapAuthenticationService := &as.LDAPAuthenticationService{
-		LDAPConfig:      ldapConfig,
-		UserInfoService: userInfoService,
+		LDAPConfig:       ldapConfig,
+		UserInfoService:  userInfoService,
 		//PrivilegeService: menuService,
-		TokenGenerator: tokenGenerator,
-		TokenConfig:    tokenConfig,
+		TokenGenerator:   tokenGenerator,
+		TokenConfig:      tokenConfig,
 	}
 	authenticationController := NewAuthenticationController(ldapAuthenticationService, activityLogService)
+    {begin}
+	{entityLowerFirstCharacter}Service := impl.New{entity}ServiceImpl(mongoDb, mongoSearchResultBuilder)
+	{entityLowerFirstCharacter}Controller := New{entity}Controller({entityLowerFirstCharacter}Service, activityLogService)
+	{end}
 
-	batchService := impl.NewBatchServiceImpl(mongoDb, mongoSearchResultBuilder)
-	batchController := NewBatchController(batchService, activityLogService)
-
-	//scheme
-	schemeService := impl.NewSchemeServiceImpl(mongoDb, mongoSearchResultBuilder)
-	schemeController := NewSchemeController(schemeService, activityLogService)
-
-	//candidate
-	candidateService := impl.NewCandidateServiceImpl(mongoDb, mongoSearchResultBuilder)
-	candidateController := NewCandidateController(candidateService, activityLogService)
-
-	//CandidateEvaluation
-	candidateEvaluationService := impl.NewCandidateEvaluationServiceImpl(mongoDb, mongoSearchResultBuilder, candidateService, schemeService)
-	candidateEvaluationController := NewCandidateEvaluationController(candidateEvaluationService, activityLogService)
 
 	//SignOut
 	// redisUrl := "redis://@localhost:6379"
@@ -96,5 +81,5 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConf
 	signOutService := impl.NewSignOutServiceImpl()
 	signOutController := NewSignOutController(signOutService, activityLogService)
 
-	return &ApplicationContext{batchController, schemeController, candidateController, authenticationController, candidateEvaluationController, signOutController}, nil
+	return &ApplicationContext{batchController, schemeController, candidateController, authenticationController,candidateEvaluationController,signOutController}, nil
 }

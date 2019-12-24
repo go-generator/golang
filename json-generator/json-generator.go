@@ -107,7 +107,7 @@ func main() {
 					text = strings.Replace(text, "{begin}", "", 1)
 					text = strings.Replace(text, "{end}", "", 1)
 				}
-				filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].RawEnv[i])
+				filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].RawEnv[i]+"s")
 				output.Files = append(output.Files, File{input.Folders[k].RawEnv[i] + "/" + filename, text})
 			} else {
 				for j := range input.Folders[k].Entity {
