@@ -205,23 +205,23 @@ func makeScrollBothTab() fyne.CanvasObject {
 
 // WidgetScreen shows a panel containing widget demos
 func WidgetScreen() fyne.CanvasObject {
-	toolbar := widget.NewToolbar(widget.NewToolbarAction(theme.MailComposeIcon(), func() { fmt.Println("New") }),
-		widget.NewToolbarSeparator(),
-		widget.NewToolbarSpacer(),
-		widget.NewToolbarAction(theme.ContentCutIcon(), func() { fmt.Println("Cut") }),
-		widget.NewToolbarAction(theme.ContentCopyIcon(), func() { fmt.Println("Copy") }),
-		widget.NewToolbarAction(theme.ContentPasteIcon(), func() { fmt.Println("Paste") }),
-	)
+	//toolbar := widget.NewToolbar(widget.NewToolbarAction(theme.MailComposeIcon(), func() { fmt.Println("New") }),
+	//	widget.NewToolbarSeparator(),
+	//	widget.NewToolbarSpacer(),
+	//	widget.NewToolbarAction(theme.ContentCutIcon(), func() { fmt.Println("Cut") }),
+	//	widget.NewToolbarAction(theme.ContentCopyIcon(), func() { fmt.Println("Copy") }),
+	//	widget.NewToolbarAction(theme.ContentPasteIcon(), func() { fmt.Println("Paste") }),
+	//)
 
-	return fyne.NewContainerWithLayout(layout.NewBorderLayout(toolbar, nil, nil, nil),
-		toolbar,
-		widget.NewTabContainer(
-			widget.NewTabItem("Buttons", makeButtonTab()),
-			widget.NewTabItem("Input", makeInputTab()),
-			widget.NewTabItem("Progress", makeProgressTab()),
-			widget.NewTabItem("Form", makeFormTab()),
-			widget.NewTabItem("Scroll", makeScrollTab()),
-			widget.NewTabItem("Full Scroll", makeScrollBothTab()),
-		),
-	)
+	//return fyne.NewContainerWithLayout(layout.NewBorderLayout(nil, nil, nil, nil),
+	//	widget.NewTabContainer(
+	//		//widget.NewTabItem("Buttons", makeButtonTab()),
+	//		//widget.NewTabItem("Input", makeInputTab()),
+	//		//widget.NewTabItem("Progress", makeProgressTab()),
+	//		widget.NewTabItem("Code Generator", makeFormTab()),
+	//		//widget.NewTabItem("Scroll", makeScrollTab()),
+	//		//widget.NewTabItem("Full Scroll", makeScrollBothTab()),
+	//	),
+	//)
+	return makeFormTab()
 }

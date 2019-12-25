@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"net/url"
 
 	"./data"
@@ -50,27 +49,26 @@ func main() {
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(theme.FyneLogo())
 
-	w := a.NewWindow("Fyne Demo")
-	w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("File",
-		fyne.NewMenuItem("New", func() { fmt.Println("Menu New") }),
-		// a quit item will be appended to our first menu
-	), fyne.NewMenu("Edit",
-		fyne.NewMenuItem("Cut", func() { fmt.Println("Menu Cut") }),
-		fyne.NewMenuItem("Copy", func() { fmt.Println("Menu Copy") }),
-		fyne.NewMenuItem("Paste", func() { fmt.Println("Menu Paste") }),
-	)))
+	w := a.NewWindow("Code Generator")
+	//w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("File",
+	//	fyne.NewMenuItem("New", func() { fmt.Println("Menu New") }),
+	//	// a quit item will be appended to our first menu
+	//), fyne.NewMenu("Edit",
+	//	fyne.NewMenuItem("Cut", func() { fmt.Println("Menu Cut") }),
+	//	fyne.NewMenuItem("Copy", func() { fmt.Println("Menu Copy") }),
+	//	fyne.NewMenuItem("Paste", func() { fmt.Println("Menu Paste") }),
+	//)))
 	w.SetMaster()
 
-	tabs := widget.NewTabContainer(
-		widget.NewTabItemWithIcon("Welcome", theme.HomeIcon(), welcomeScreen(a)),
-		widget.NewTabItemWithIcon("Widgets", theme.ContentCopyIcon(), screens.WidgetScreen()),
-		widget.NewTabItemWithIcon("Graphics", theme.DocumentCreateIcon(), screens.GraphicsScreen()),
-		widget.NewTabItemWithIcon("Windows", theme.ViewFullScreenIcon(), screens.DialogScreen(w)),
-		widget.NewTabItemWithIcon("Advanced", theme.SettingsIcon(), screens.AdvancedScreen(w)))
-	tabs.SetTabLocation(widget.TabLocationLeading)
-	tabs.SelectTabIndex(a.Preferences().Int(preferenceCurrentTab))
-	w.SetContent(tabs)
+	//tabs := widget.NewTabContainer(
+	//
+	//	widget.NewTabItemWithIcon("Widgets", theme.ContentCopyIcon(), screens.WidgetScreen()),
+	//)
+	//
+	//tabs.SetTabLocation(widget.TabLocationLeading)
+	//tabs.SelectTabIndex(a.Preferences().Int(preferenceCurrentTab))
+	w.SetContent(screens.WidgetScreen())
 
 	w.ShowAndRun()
-	a.Preferences().SetInt(preferenceCurrentTab, tabs.CurrentTabIndex())
+	//a.Preferences().SetInt(preferenceCurrentTab, tabs.CurrentTabIndex())
 }
