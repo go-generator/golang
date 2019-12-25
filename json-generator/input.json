@@ -2,7 +2,7 @@
   "folders": [
     {
       "env": [
-        "config"
+        "service"
       ],
       "entity": [
         "Batch","Candidate","CandidateEvaluation"

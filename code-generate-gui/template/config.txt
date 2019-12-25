@@ -1,0 +1,85 @@
+package config
+
+import (
+	as "../../ldap-authentication"
+	. "./controller"
+	"../service/impl"
+	"context"
+	"fmt"
+	"github.com/common-go/auth"
+	"github.com/common-go/jwt"
+	"github.com/common-go/mongo"
+	"reflect"
+)
+
+type JwtTokenVerifier struct {
+}
+
+func (t *JwtTokenVerifier) VerifyToken(tokenString string, secret string) (interface{}, int64, int64, error) {
+	payload, c, err := jwt.VerifyToken(tokenString, secret)
+	return payload, c.IssuedAt, c.ExpiresAt, err
+}
+
+type JwtTokenGenerator struct {
+}
+
+func (t *JwtTokenGenerator) GenerateToken(payload interface{}, secret string, expiresIn int64) (string, error) {
+	return jwt.GenerateToken(payload, secret, uint64(expiresIn))
+}
+
+type ApplicationContext struct {
+	BatchController 							*BatchController
+	SchemeController 							*SchemeController
+	CandidateController 						*CandidateController
+	AuthenticationController 					*AuthenticationController
+	CandidateEvaluationController 				*CandidateEvaluationController
+	SignOutController 							*SignOutController
+}
+
+func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConfig, tokenConfig auth.TokenConfig) (*ApplicationContext, error) {
+	ctx := context.Background()
+	mongoDb, er1 := mongo.SetupMongo(ctx, mongoConfig)
+	if er1 != nil {
+		return nil, er1
+	}
+
+	mongoQueryBuilder := &mongo.DefaultQueryBuilder{}
+	mongoSortBuilder := &mongo.DefaultSortBuilder{}
+	mongoSearchResultBuilder := &mongo.DefaultSearchResultBuilder{
+		Database:     mongoDb,
+		QueryBuilder: mongoQueryBuilder,
+		SortBuilder:  mongoSortBuilder,
+	}
+	// resultInfoBuilder := &builder.DefaultResultInfoBuilder{}
+	activityLogService := impl.NewActivityLogServiceImpl(mongoDb)
+
+	//authentication
+	//userModuleService := NewUserServiceImpl(db)
+	userInfoService := impl.NewUserInfoServiceImpl()
+	//menuService := NewPrivilegeServiceImpl(db)
+
+	tokenGenerator := &JwtTokenGenerator{}
+	ldapAuthenticationService := &as.LDAPAuthenticationService{
+		LDAPConfig:       ldapConfig,
+		UserInfoService:  userInfoService,
+		//PrivilegeService: menuService,
+		TokenGenerator:   tokenGenerator,
+		TokenConfig:      tokenConfig,
+	}
+	authenticationController := NewAuthenticationController(ldapAuthenticationService, activityLogService)
+    {begin}
+	{entityLowerFirstCharacter}Service := impl.New{entity}ServiceImpl(mongoDb, mongoSearchResultBuilder)
+	{entityLowerFirstCharacter}Controller := New{entity}Controller({entityLowerFirstCharacter}Service, activityLogService)
+	{end}
+
+
+	//SignOut
+	// redisUrl := "redis://@localhost:6379"
+	// redisService, _ := redis_client.NewRedisService(redisUrl)
+	fmt.Println(reflect.TypeOf(tokenConfig.Expires))
+	// blacklistTokenService := security.NewDefaultTokenBlacklistTokenService("", tokenConfig.Expires, redisService)
+	signOutService := impl.NewSignOutServiceImpl()
+	signOutController := NewSignOutController(signOutService, activityLogService)
+
+	return &ApplicationContext{batchController, schemeController, candidateController, authenticationController,candidateEvaluationController,signOutController}, nil
+}
