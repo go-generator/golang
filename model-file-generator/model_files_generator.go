@@ -16,6 +16,7 @@ func main() {
 	hostPtr := flag.String("host", "", "input host")
 	flag.Parse()
 	packageName := "model"
+	output := "database_models"
 	cre := DatabaseCredentials{
 		Username:     *userPtr,
 		Password:     *passPtr,
@@ -38,5 +39,6 @@ func main() {
 			log.Fatal("Failed attempt to close the connection, " + err.Error())
 		}
 	}()
-	ModelFilesGenerator(&s, conn, tables, packageName)
+	//ModelFilesGenerator(&s, conn, tables, packageName) // Will generate go file
+	JsonDescriptionGenerator(&s, conn, tables, packageName, output) // Generate database description json file
 }

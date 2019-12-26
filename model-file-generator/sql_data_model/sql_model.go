@@ -1,6 +1,7 @@
 package sql_data_model
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,6 +11,38 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
+
+type FilesDetails struct {
+	Env   string      `json:"env"`
+	Files []ModelJSON `json:"files"`
+}
+
+type ModelJSON struct {
+	Name       string          `json:"name"`
+	Source     string          `json:"source"`
+	ConstValue []Const         `json:"const"`
+	TypeAlias  []TypeAlias     `json:"type_alias"`
+	Fields     []FieldElements `json:"fields"`
+	WriteFile  strings.Builder `json:"-"`
+}
+
+type Const struct {
+	Name  string      `json:"name"`
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
+type TypeAlias struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type FieldElements struct {
+	Name       string `json:"name"`
+	Source     string `json:"source"`
+	Type       string `json:"type"`
+	PrimaryKey bool   `json:"primaryKey"`
+}
 
 type TypeMap map[string]string
 
@@ -155,4 +188,55 @@ func ModelFilesGenerator(s *SqlTablesData, conn *gorm.DB, tables []string, packa
 		s.ResetData() // Reuse Variable
 	}
 	log.Println("Model files are generated successfully")
+}
+
+func JsonDescriptionGenerator(s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+	var files FilesDetails
+	files.Env = packageName
+	s.InitSqlTablesData()
+	path := "./" + packageName + "/"
+	fileDirectory := path + output + ".json"
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.Mkdir(path, 0777)
+		if err != nil {
+			log.Fatal("Failed attempt to create directory, " + err.Error())
+		}
+	}
+	for _, v := range tables {
+		var m ModelJSON
+		m.Name = v
+		s.InitSqlTable(v, conn)
+		s.StandardizeFieldsName()
+		for i, v := range s.SqlTable {
+			var f FieldElements
+			if s.ContainCompositeKey {
+				f.Source = ToLower(s.GoFields[i])
+			} else {
+				if v.ColumnKey == "PRI" {
+					f.Source = "_id"
+				} else {
+					f.Source = ToLower(s.GoFields[i])
+				}
+			}
+			f.Name = s.GoFields[i]
+			f.Type = s.TypeMap[v.DataType]
+			if v.ColumnKey == "PRI" {
+				f.PrimaryKey = true
+			} else {
+				f.PrimaryKey = false
+			}
+			m.Fields = append(m.Fields, f)
+		}
+		files.Files = append(files.Files, m)
+		s.ResetData() // Reuse Variable
+	}
+	data, err := json.MarshalIndent(&files, "", " ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = ioutil.WriteFile(fileDirectory, data, 0644) // Create and write files
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Json files are generated successfully")
 }

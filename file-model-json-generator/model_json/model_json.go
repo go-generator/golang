@@ -196,12 +196,6 @@ func ModelJSONFileGenerator(source, destination, projectName, rootPath, output s
 	var out Output
 	out.ProjectName = projectName
 	out.RootPath = rootPath
-	if _, err := os.Stat(source); os.IsNotExist(err) {
-		err = os.Mkdir(source, 0777)
-		if err != nil {
-			log.Fatal("Failed attempt to create directory, " + err.Error())
-		}
-	}
 	if _, err := os.Stat(destination); os.IsNotExist(err) {
 		err = os.Mkdir(destination, 0777)
 		if err != nil {

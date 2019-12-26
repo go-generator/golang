@@ -9,4 +9,5 @@ func main() {
 	rootPath := ""
 	fileOutput := "model_json_output"
 	ModelJSONFileGenerator(source, destination, projectName, rootPath, fileOutput)
+
 }
