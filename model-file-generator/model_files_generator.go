@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	. "golang/model-file-generator/model_files_functions"
-	. "golang/model-file-generator/sql_data_model"
+	. "./model_files_functions"
+	. "./sql_data_model"
 )
 
 func main() {
@@ -17,9 +17,9 @@ func main() {
 	flag.Parse()
 	packageName := "model"
 	cre := DatabaseCredentials{
-		Username:     *userPtr,   //"test",
-		Password:     *passPtr,   //"Doraemon1096~", //"127.0.0.1:3306",
-		DatabaseName: *dbNamePtr, //"odd",
+		Username:     *userPtr,
+		Password:     *passPtr,
+		DatabaseName: *dbNamePtr,
 	}
 	if *hostPtr == "" {
 		cre.Host = "127.0.0.1:3306"

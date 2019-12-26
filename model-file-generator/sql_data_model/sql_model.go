@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
+	. "../model_files_functions"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	. "golang/model-file-generator/model_files_functions"
 )
 
 type TypeMap map[string]string
