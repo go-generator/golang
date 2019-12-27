@@ -7,10 +7,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"unicode"
 )
+
+type FilesDetails struct {
+	Env   string      `json:"env"`
+	Files []ModelJSON `json:"files"`
+}
 
 type ModelJSON struct {
 	Env        string          `json:"env"`
@@ -23,7 +27,7 @@ type ModelJSON struct {
 }
 
 func ToLower(s string) string {
-	if len(s) < 0 {
+	if s == "" {
 		return ""
 	}
 	return string(unicode.ToLower(rune(s[0]))) + s[1:]
@@ -47,17 +51,8 @@ type FieldElements struct {
 	PrimaryKey bool   `json:"primaryKey"`
 }
 
-func CreateDirectory(dir string) {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.MkdirAll(dir, 0755)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func ReadJSON(pathFile string) ModelJSON {
-	var v ModelJSON
+func ReadJSON(pathFile string) FilesDetails {
+	var v FilesDetails
 	jsonFile, err := os.Open(pathFile)
 	if err != nil {
 		panic(err)
@@ -69,22 +64,6 @@ func ReadJSON(pathFile string) ModelJSON {
 		panic(err)
 	}
 	return v
-}
-
-func GormStandalize(name string) string {
-	var res strings.Builder
-	re := regexp.MustCompile(`[A-Z][^A-Z]*`)
-	//fmt.Printf("Pattern: %v\n", re.String()) // Print Pattern
-	subMatchAll := re.FindAllString(strings.Title(name), -1)
-	for i := range subMatchAll {
-		if i == len(subMatchAll)-1 {
-			res.WriteString(strings.ToLower(subMatchAll[i]))
-			continue
-		}
-		res.WriteString(strings.ToLower(subMatchAll[i]) + "_")
-	}
-	res.WriteString(":primary_key")
-	return res.String()
 }
 
 func AddStructFieldName(name string) string {
@@ -187,6 +166,7 @@ type Output struct {
 	RootPath    string `json:"rootPath"`
 	Files       []File `json:"files"`
 }
+
 type File struct {
 	Name    string `json:"name"`
 	Content string `json:"content"`
@@ -207,10 +187,12 @@ func ModelJSONFileGenerator(source, destination, projectName, rootPath, output s
 	for _, v := range jsonFiles {
 		var file File
 		content := ReadJSON(source + v) // struct content
-		content.CreateContent(content.Env)
-		file.Name = content.Env + "/" + ToLower(content.Name) + ".go"
-		file.Content = content.WriteFile.String()
-		out.Files = append(out.Files, file)
+		for _, k := range content.Files {
+			k.CreateContent(content.Env)
+			file.Name = content.Env + "/" + ToLower(k.Name) + ".go"
+			file.Content = k.WriteFile.String()
+			out.Files = append(out.Files, file)
+		}
 	}
 	data, err := json.MarshalIndent(out, "", " ")
 	if err != nil {

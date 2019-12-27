@@ -2,21 +2,19 @@ package main
 
 import (
 	"flag"
-	"log"
 
-	. "./model_files_functions"
+	. "./endpoint_functions"
 	. "./sql_data_model"
 )
 
 func main() {
-	var s SqlTablesData
 	userPtr := flag.String("username", "", "input username")
 	passPtr := flag.String("password", "", "input password")
 	dbNamePtr := flag.String("dbName", "", "input database name")
 	hostPtr := flag.String("host", "", "input host")
+	packagePtr := flag.String("package", "", "input package name")
+	outputPtr := flag.String("output", "", "input file output name")
 	flag.Parse()
-	packageName := "model"
-	output := "database_models"
 	cre := DatabaseCredentials{
 		Username:     *userPtr,
 		Password:     *passPtr,
@@ -25,20 +23,8 @@ func main() {
 	if *hostPtr == "" {
 		cre.Host = "127.0.0.1:3306"
 	}
-	conn, err := cre.ConnectToSqlServer()
-	log.Println("Connecting to sql server...")
-	if err != nil {
-		log.Fatal("Failed attempt to connect to server, " + err.Error())
+	if *outputPtr == "" {
+		*outputPtr = "database"
 	}
-	log.Println("Connection to sql server is established successfully")
-	tables := ListAllTableNames(conn, cre.DatabaseName)
-	defer s.FreeResources() // Close connection before freeing resources
-	defer func() {
-		err = conn.Close()
-		if err != nil {
-			log.Fatal("Failed attempt to close the connection, " + err.Error())
-		}
-	}()
-	//ModelFilesGenerator(&s, conn, tables, packageName) // Will generate go file
-	JsonDescriptionGenerator(&s, conn, tables, packageName, output) // Generate database description json file
+	JsonDescriptionGenerator(cre, *packagePtr, *outputPtr) // Generate database description json file
 }
