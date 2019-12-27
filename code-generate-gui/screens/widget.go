@@ -3,6 +3,7 @@ package screens
 import (
 	"fmt"
 	"github.com/sqweek/dialog"
+	"golang/code-generate-gui/code-generate-core"
 	"time"
 
 	"fyne.io/fyne"
@@ -71,19 +72,33 @@ func makeProgressTab() fyne.Widget {
 }
 
 func makeFormTab() fyne.CanvasObject {
-
+	projectName := widget.NewEntry()
+	projectName.SetPlaceHolder("Project Name")
+	templateDir := widget.NewEntry()
+	templateDir.SetPlaceHolder("Template Folder Directory")
+	templateButton := widget.NewButton("Browse...", func() {
+		directory, err := dialog.Directory().Title("Browse...").Browse()
+		if err != nil {
+			templateDir.SetText(err.Error())
+		}
+		templateDir.SetText(directory)
+	})
+	templateBar := widget.NewHBox(
+		templateDir, templateButton,
+	)
 	largeText := widget.NewMultiLineEntry()
 	largeText.SetPlaceHolder("Input")
 	largeText2 := widget.NewMultiLineEntry()
 	largeText2.SetPlaceHolder("Output")
 	cursorRow := widget.NewLabel("")
 	okButton := widget.NewButton("Code Generate", func() {
-		output, status := CodeGenerate(largeText.Text, "")
-		largeText2.SetText(output)
-		if status != nil {
-			cursorRow.SetText(status.Error())
-		} else {
+		result := ""
+		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText.Text, &result)
+		if err == "" {
+			largeText2.SetText(result)
 			cursorRow.SetText("OK")
+		} else {
+			cursorRow.SetText(err)
 		}
 	})
 	openFileButton := widget.NewButton("Code Generate From File...", func() {
@@ -91,57 +106,77 @@ func makeFormTab() fyne.CanvasObject {
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {
-			output, status := CodeGenerate("", filename)
-			largeText2.SetText(output)
-			if status != nil {
-				cursorRow.SetText(status.Error())
-			} else {
+			result := ""
+			err := code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result)
+			if err == "" {
+				largeText2.SetText(result)
 				cursorRow.SetText("OK")
+			} else {
+				cursorRow.SetText(err)
 			}
 		}
 
 	})
 
 	saveButton := widget.NewButton("Save Files (to main.go folder or input.json folder)", func() {
-		status := SaveFolderOnDisk("")
-		cursorRow.SetText(status)
+		err := code_generate_core.OutputStructToFiles("")
+		if err != "" {
+			cursorRow.SetText(err)
+		} else {
+			cursorRow.SetText("Files Created On Disk")
+		}
 	})
 	saveAsButton := widget.NewButton("Save Files As...", func() {
 		directory, err := dialog.Directory().Title("Save Files As...").Browse()
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {
-			status := SaveFolderOnDisk(directory)
-			cursorRow.SetText(status)
+			err := code_generate_core.OutputStructToFiles(directory)
+			if err != "" {
+				cursorRow.SetText(err)
+			} else {
+				cursorRow.SetText("Files Created On Disk")
+			}
 		}
 	})
 	zipButton := widget.NewButton("Save Zip (to main.go folder or input.json folder)", func() {
-		status := SaveZipOnDisk("")
-		cursorRow.SetText(status)
+		err := code_generate_core.OutputStructToZip("")
+		if err != "" {
+			cursorRow.SetText(err)
+		} else {
+			cursorRow.SetText("Zip Created On Disk")
+		}
 	})
 	zipAsButton := widget.NewButton("Save Zip As...", func() {
-		//directory, err := dialog.File().Filter("ZIP files", "zip").Title("Export to ZIP").Save()
-		directory, err := dialog.Directory().Title("Save Zip As...").Browse()
+		directory, err := dialog.File().Filter("ZIP files", "zip").Title("Export to ZIP").Save()
+		//directory, err := dialog.Directory().Title("Save Zip As...").Browse()
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {
-			status := SaveZipOnDisk(directory)
-			cursorRow.SetText(status)
+			err := code_generate_core.OutputStructToZip(directory)
+			if err != "" {
+				cursorRow.SetText(err)
+			} else {
+				cursorRow.SetText("Zip Created On Disk")
+			}
 		}
 	})
 	list := widget.NewVBox()
 	list2 := widget.NewVBox()
+	list.Append(templateBar)
 	list.Append(okButton)
 	list.Append(saveButton)
 	list.Append(zipButton)
 	list.Append(openFileButton)
 	list.Append(saveAsButton)
 	list.Append(zipAsButton)
+	list2.Append(projectName)
 	list2.Append(largeText)
 	list2.Append(largeText2)
 	statusBar := widget.NewHBox(layout.NewSpacer(),
 		widget.NewLabel("Status:"), cursorRow,
 	)
+
 	list.Append(statusBar)
 
 	//	OnCancel: func() {

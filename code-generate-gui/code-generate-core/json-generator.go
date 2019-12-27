@@ -1,13 +1,12 @@
 //USAGE INSTRUCTIONS
 //Example: "go run main.go input.json rootPath", without filename.json provided, default filename will be "input.json"...
-package screens
+package code_generate_core
 
 import (
 	"archive/zip"
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -15,7 +14,7 @@ const (
 	defaultFileName       = "input.json"
 	defaultRootPath       = ""
 	defaultProjectName    = "evaluation"
-	defaultTemplateFolder = "template"
+	defaultTemplateFolder = "code-generate-core/template"
 )
 
 type Input struct {
@@ -24,8 +23,10 @@ type Input struct {
 
 type Folder struct {
 	Env    []string
-	Entity []string `json:"entity"`
-	RawEnv []string `json:"env"`
+	Entity []string    `json:"entity"`
+	RawEnv []string    `json:"env"`
+	Model  string      `json:"model"`
+	Files  []ModelJSON `json:"files"`
 }
 type Output struct {
 	ProjectName string `json:"projectName"`
@@ -39,51 +40,42 @@ type File struct {
 
 var input Input
 var output Output
+var templateDir string
+var projectName string
 
-func CodeGenerate(guiInput string, filename string) (string, error) {
-	output = Output{}
-	input = Input{}
-	//READ THE JSON INPUT
-
-	//filename := defaultFileName
-	rootPath := defaultRootPath
-
-	//if len(os.Args) > 1 {
-	//	filename = os.Args[1]
-	//}
-	//if len(os.Args) > 2 {
-	//	rootPath = os.Args[2]
-	//	rootPath = strings.TrimSuffix(rootPath, "/")
-	//}
-	if filename != "" {
-		jsonFile, err := os.Open(filename)
-		if err != nil {
-			return "", err
-		}
-		byteValue, err := ioutil.ReadAll(jsonFile)
-		if err != nil {
-			return "", err
-		}
-		err = jsonFile.Close()
-		if err != nil {
-			return "", err
-		}
-
-		err = json.Unmarshal(byteValue, &input)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		//OVERWRITE "input" WITH GUI INPUT
-		err := json.Unmarshal([]byte(guiInput), &input)
-		if err != nil {
-			return "", err
-		}
+func InputFileToInputStruct(filename string) string {
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		return err.Error()
+	}
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return err.Error()
+	}
+	err = jsonFile.Close()
+	if err != nil {
+		return err.Error()
 	}
 
+	err = json.Unmarshal(byteValue, &input)
+	if err != nil {
+		return err.Error()
+	}
+	return ""
+}
+func InputStringToInputStruct(guiInput string) string {
+
+	err := json.Unmarshal([]byte(guiInput), &input)
+	if err != nil {
+		return err.Error()
+	}
+	return ""
+}
+func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
-	output.RootPath = rootPath
-	output.ProjectName = defaultProjectName
+	output.RootPath = defaultRootPath
+	output.ProjectName = projectName
+	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
 	for k := range input.Folders {
 		for i := range input.Folders[k].RawEnv {
 			//Convert RawEnv to Env
@@ -93,7 +85,7 @@ func CodeGenerate(guiInput string, filename string) (string, error) {
 			//READ THE TEMPLATE FILES
 			content, err := ioutil.ReadFile(defaultTemplateFolder + "/" + input.Folders[k].Env[i] + ".txt")
 			if err != nil {
-				return "", err
+				return err.Error()
 			}
 			template := string(content)
 			if strings.Contains(template, "{begin}") {
@@ -131,72 +123,19 @@ func CodeGenerate(guiInput string, filename string) (string, error) {
 				}
 			}
 		}
+		ModelJSONFileGenerator(FilesDetails{
+			Model: input.Folders[k].Model,
+			Files: input.Folders[k].Files,
+		}, &output)
 	}
-
-	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
-
 	//OUTPUT STRUCT TO STRING(JSON)
-	file, _ := json.MarshalIndent(output, "", " ")
-	return string(file), error(nil)
-
-	//CREATE FOLDER ON DISK
-	//for i := range output.Files {
-	//	tmpPath := output.RootPath + output.Files[i].Name
-	//	tmp := strings.LastIndex(tmpPath, "/")
-	//	tmpPath = tmpPath[:tmp]
-	//	err = os.MkdirAll(tmpPath, os.ModePerm)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	f, err := os.Create(output.RootPath + output.Files[i].Name)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	_, err = f.WriteString(output.Files[i].Content)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	err = f.Close()
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//}
-	//fmt.Println(strconv.Itoa(len(output.Files)) + " files created on disk")
-
-	//New-style ZIP
-	//if output.ProjectName == "" {
-	//	output.ProjectName = defaultProjectName
-	//}
-	//newZipFile, err := os.Create(output.RootPath + output.ProjectName + ".zip")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//defer newZipFile.Close()
-	//w := zip.NewWriter(newZipFile)
-	//for i := range output.Files {
-	//	output.Files[i].Name = strings.TrimPrefix(output.Files[i].Name, "/")
-	//	f, err := w.Create(output.Files[i].Name)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	_, err = f.Write([]byte(output.Files[i].Content))
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//}
-	//err = w.Close()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//fmt.Println("Zip created on disk")
-
-	////CREATE OUTPUT JSON
-	//file, _ := json.MarshalIndent(output, "", " ")
-	//_ = ioutil.WriteFile("output.json", file, 0644)
-
+	file, err := json.MarshalIndent(output, "", " ")
+	if err != nil {
+		return err.Error()
+	}
+	*result = string(file)
+	return ""
 }
-
-//Convert (SomeThing,service/impl) to some_thing_service_impl.go
 func FileNameConverter(s string, path string) string {
 	s2 := strings.ToLower(s)
 	s3 := ""
@@ -210,9 +149,11 @@ func FileNameConverter(s string, path string) string {
 	path = strings.ReplaceAll(path, "/", "_")
 	return s3[1:] + "_" + path + ".go"
 }
-
-func SaveFolderOnDisk(direc string) string {
+func OutputStructToFiles(direc string) string {
 	//CREATE FOLDER ON DISK
+	if len(output.Files) == 0 {
+		return "0 File Created On Disk"
+	}
 	if direc != "" {
 		output.RootPath = direc
 	}
@@ -244,20 +185,31 @@ func SaveFolderOnDisk(direc string) string {
 			return err.Error()
 		}
 	}
-	return strconv.Itoa(len(output.Files)) + " files created on disk"
+	//return strconv.Itoa(len(output.Files)) + " files created on disk"
+	return ""
 }
-func SaveZipOnDisk(direc string) string {
-	//New-style ZIP
-	if direc != "" {
-		output.RootPath = direc
-	}
+func OutputStructToZip(direc string) string {
 	if len(output.Files) == 0 {
-		return "No file to zip"
+		return "No File To Zip"
 	}
-	if output.ProjectName == "" {
-		output.ProjectName = defaultProjectName
+	fileName := output.ProjectName
+	if direc != "" {
+		tmp := strings.LastIndex(direc, "/")
+		fileName = direc[tmp+1:]
+		fileName = strings.TrimSuffix(fileName, ".zip")
+		if tmp != -1 {
+			output.RootPath = direc[:tmp]
+		}
 	}
-	newZipFile, err := os.Create(output.RootPath + output.ProjectName + ".zip")
+	if output.RootPath != "" {
+		err := os.MkdirAll(output.RootPath, os.ModePerm)
+		if err != nil {
+			return err.Error()
+		}
+		output.RootPath += "/"
+	}
+
+	newZipFile, err := os.Create(output.RootPath + fileName + ".zip")
 	if err != nil {
 		return err.Error()
 	}
@@ -278,5 +230,52 @@ func SaveZipOnDisk(direc string) string {
 	if err != nil {
 		return err.Error()
 	}
-	return "Zip created on disk"
+	//return "Zip created on disk"
+	return ""
+}
+func GenerateFromString(temp, project, guiInput string, outputString *string) string {
+	input = Input{}
+	output = Output{}
+	if temp != "" {
+		templateDir = temp
+	} else {
+		templateDir = defaultTemplateFolder
+	}
+	if project != "" {
+		projectName = project
+	} else {
+		projectName = defaultProjectName
+	}
+	err := InputStringToInputStruct(guiInput)
+	if err != "" {
+		return err
+	}
+	err = InputStructToOutputString(outputString)
+	if err != "" {
+		return err
+	}
+	return ""
+}
+func GenerateFromFile(temp, project, filename string, outputString *string) string {
+	input = Input{}
+	output = Output{}
+	if temp != "" {
+		templateDir = temp
+	} else {
+		templateDir = defaultTemplateFolder
+	}
+	if project != "" {
+		projectName = project
+	} else {
+		projectName = defaultProjectName
+	}
+	err := InputFileToInputStruct(filename)
+	if err != "" {
+		return err
+	}
+	err = InputStructToOutputString(outputString)
+	if err != "" {
+		return err
+	}
+	return ""
 }
