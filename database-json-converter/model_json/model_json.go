@@ -124,7 +124,7 @@ func (m *ModelJSON) WriteStruct() {
 			count++
 		}
 	}
-	m.WriteFile.WriteString("type " + m.Name + " struct {\n")
+	m.WriteFile.WriteString("type " + StandardizeStructName(m.Name) + " struct {\n")
 	if count < 2 {
 		for _, v := range m.Fields {
 			if v.PrimaryKey {
@@ -175,6 +175,15 @@ type Output struct {
 type File struct {
 	Name    string `json:"name"`
 	Content string `json:"content"`
+}
+
+func StandardizeStructName(s string) string {
+	var res strings.Builder
+	tokens := strings.Split(s, "_")
+	for _, v := range tokens {
+		res.WriteString(strings.Title(v))
+	}
+	return res.String()
 }
 
 func ModelJSONFileGenerator(source, destination, projectName, rootPath, output string) {
