@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
+	"log"
 
-	. "./endpoint_functions"
 	. "./sql_data_model"
 )
 
-func main() {
+func RunWithCommandLine() {
 	userPtr := flag.String("username", "", "input username")
 	passPtr := flag.String("password", "", "input password")
 	dbNamePtr := flag.String("dbName", "", "input database name")
@@ -19,6 +19,8 @@ func main() {
 		Username:     *userPtr,
 		Password:     *passPtr,
 		DatabaseName: *dbNamePtr,
+		Package:      *packagePtr,
+		Output:       *outputPtr,
 	}
 	if *hostPtr == "" {
 		cre.Host = "127.0.0.1:3306"
@@ -26,5 +28,17 @@ func main() {
 	if *outputPtr == "" {
 		*outputPtr = "database"
 	}
-	JsonDescriptionGenerator(cre, *packagePtr, *outputPtr) // Generate database description json file
+	err := JsonDescriptionGenerator(cre)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func RunWithUI() {
+	var cre DatabaseCredentials
+	cre.InputUI().ShowAndRun()
+}
+
+func main() {
+	RunWithUI()
 }
