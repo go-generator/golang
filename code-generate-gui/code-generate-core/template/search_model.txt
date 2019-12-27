@@ -1,0 +1,9 @@
+package {env}
+
+import "github.com/common-go/search"
+
+type {entity}SM struct {
+	*search.SearchModel
+	{entity}Id   string `json:"{entityLowerFirstCharacter}Id"`
+	{entity}Name string `json:"{entityLowerFirstCharacter}Name"`
+}

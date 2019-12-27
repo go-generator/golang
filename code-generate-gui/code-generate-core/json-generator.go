@@ -90,10 +90,11 @@ func InputStructToOutputString(result *string) string {
 			template := string(content)
 			if strings.Contains(template, "{begin}") {
 				text := template
+				text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
 				for strings.Contains(text, "{begin}") {
 					begin := strings.Index(text, "{begin}")
 					end := strings.Index(text, "{end}")
-					envCount := strings.Count(text[begin:end], "{env}")
+					//envCount := strings.Count(text[begin:end], "{env}")
 					entityCount := strings.Count(text[begin:end], "{entity}")
 					entityLowerFirstCharacterCount := strings.Count(text[begin:end], "{entityLowerFirstCharacter}")
 					tmpText := text[:end+len("{end}")]
@@ -103,7 +104,7 @@ func InputStructToOutputString(result *string) string {
 					text = tmpText + text[end+len("{end}"):]
 
 					for j := range input.Folders[k].Entity {
-						text = strings.Replace(text, "{env}", input.Folders[k].Env[i], envCount)
+						//text = strings.Replace(text, "{env}", input.Folders[k].Env[i], envCount)
 						text = strings.Replace(text, "{entity}", input.Folders[k].Entity[j], entityCount)
 						text = strings.Replace(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:], entityLowerFirstCharacterCount)
 					}
@@ -111,7 +112,7 @@ func InputStructToOutputString(result *string) string {
 					text = strings.Replace(text, "{end}", "", 1)
 				}
 				filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].RawEnv[i]+"s")
-				output.Files = append(output.Files, File{input.Folders[k].RawEnv[i] + "/" + filename, text})
+				output.Files = append(output.Files, File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
 			} else {
 				for j := range input.Folders[k].Entity {
 					text := template
@@ -119,7 +120,7 @@ func InputStructToOutputString(result *string) string {
 					text = strings.ReplaceAll(text, "{entity}", input.Folders[k].Entity[j])
 					text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:])
 					filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
-					output.Files = append(output.Files, File{input.Folders[k].RawEnv[i] + "/" + filename, text})
+					output.Files = append(output.Files, File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
 				}
 			}
 		}

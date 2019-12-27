@@ -1,15 +1,15 @@
-package config
+package {env}
 
 import (
-	as "../../ldap-authentication"
-	. "./controller"
-	"../service/impl"
 	"context"
-	"fmt"
-	"github.com/common-go/auth"
-	"github.com/common-go/jwt"
-	"github.com/common-go/mongo"
-	"reflect"
+    "evaluation/controller"
+    as "evaluation/ldap-authentication"
+    "evaluation/service/impl"
+    "fmt"
+    "github.com/common-go/auth"
+    "github.com/common-go/jwt"
+    "github.com/common-go/mongo"
+    "reflect"
 )
 
 type JwtTokenVerifier struct {
@@ -28,12 +28,10 @@ func (t *JwtTokenGenerator) GenerateToken(payload interface{}, secret string, ex
 }
 
 type ApplicationContext struct {
-	BatchController 							*BatchController
-	SchemeController 							*SchemeController
-	CandidateController 						*CandidateController
-	AuthenticationController 					*AuthenticationController
-	CandidateEvaluationController 				*CandidateEvaluationController
-	SignOutController 							*SignOutController
+	{begin}
+	{entity}Controller 							*{entity}Controller
+	{end}
+
 }
 
 func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConfig, tokenConfig auth.TokenConfig) (*ApplicationContext, error) {

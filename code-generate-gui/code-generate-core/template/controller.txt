@@ -1,12 +1,12 @@
 package {env}
 
 import (
-	"../handler"
-	"../model"
-	"../search-model"
-	"../service"
-	. "github.com/common-go/echo"
-	"reflect"
+	"evaluation/handler"
+    "evaluation/model"
+    "evaluation/search-model"
+    "evaluation/service"
+    . "github.com/common-go/echo"
+    "reflect"
 )
 
 type {entity}Controller struct {

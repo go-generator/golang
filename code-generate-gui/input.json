@@ -2,7 +2,7 @@
   "folders": [
     {
       "env": [
-        "service","config","controller","service/impl","route"
+        "search_model","config","controller","service/impl","route","service"
       ],
       "entity": [
         "Batch","Candidate","CandidateEvaluation"

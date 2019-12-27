@@ -1,12 +1,12 @@
-package route
+package {env}
 
 import (
-	ldap "../../ldap-authentication"
-	"../config"
-	"github.com/common-go/auth"
-	"github.com/common-go/mongo"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"evaluation/config"
+    ldap "evaluation/ldap-authentication"
+    "github.com/common-go/auth"
+    "github.com/common-go/mongo"
+    "github.com/labstack/echo"
+    "github.com/labstack/echo/middleware"
 )
 
 type EvaRoutes struct {
