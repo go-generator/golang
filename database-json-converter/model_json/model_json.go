@@ -88,9 +88,14 @@ func AddGORMTag(name string, primaryTag bool) string {
 	return " gorm:\"column:" + name + "\"`\n"
 }
 
-func (m *ModelJSON) WritePackage(packageName string) string {
+func (m *ModelJSON) WritePackage(packageName string) {
 	m.WriteFile.WriteString("package " + packageName + "\n\n")
-	return "package " + packageName + "\n\n"
+	for _, v := range m.Fields {
+		if v.Type == "time.Time" {
+			m.WriteFile.WriteString("import \"time\"\n\n")
+			break
+		}
+	}
 }
 
 func (m *ModelJSON) WriteTypeAlias() {
