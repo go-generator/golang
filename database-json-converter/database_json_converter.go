@@ -12,6 +12,7 @@ func main() {
 	projectName := flag.String("projectName", "", "input project name")
 	rootPath := flag.String("rootPath", "", "input root path")
 	output := flag.String("output", "", "input file output name")
+	flag.Parse()
 	if *output == "" {
 		*output = "json_converted"
 	}
