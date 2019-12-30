@@ -40,5 +40,6 @@ func RunWithUI() {
 }
 
 func main() {
+	//RunWithCommandLine()
 	RunWithUI()
 }

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	. "../model_files_functions"
@@ -14,6 +15,8 @@ import (
 	"fyne.io/fyne/widget"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/pkg/errors"
+	"github.com/sqweek/dialog"
 )
 
 type FilesDetails struct {
@@ -49,6 +52,8 @@ type FieldElements struct {
 }
 
 type DatabaseCredentials struct {
+	Dialect      string
+	Port         string
 	Username     string
 	Host         string
 	Password     string
@@ -58,11 +63,26 @@ type DatabaseCredentials struct {
 }
 
 func (dc *DatabaseCredentials) ConnectToSqlServer() (*gorm.DB, error) {
-	conn, err := gorm.Open("mysql", dc.Username+":"+dc.Password+"@("+dc.Host+")/"+dc.DatabaseName+"?charset=utf8&parseTime=True&loc=Local")
-	if err != nil {
-		return nil, err
+	var conn *gorm.DB
+	var err error
+	switch dc.Dialect {
+	case "mysql":
+		conn, err = gorm.Open("mysql", dc.Username+":"+dc.Password+"@("+dc.Host+":"+dc.Port+")/"+dc.DatabaseName+"?charset=utf8&parseTime=True&loc=Local")
+	case "postgres":
+		conn, err = gorm.Open(dc.Dialect, "user="+dc.Username+" dbname="+dc.DatabaseName+" password="+dc.Password+" host="+dc.Host+" port="+dc.Port+" sslmode=disable")
+	case "mssql":
+		conn, err = gorm.Open(dc.Dialect, "sqlserver://"+dc.Username+":"+dc.Password+"@"+dc.Host+":"+dc.Port+"?Database="+dc.Port)
+	case "sqlite3":
+		conn, err = gorm.Open("sqlite3", dc.Host)
+	default:
+		conn = nil
+		err = errors.New("Incorrect Dialect")
 	}
 	return conn, err
+}
+
+func (dc *DatabaseCredentials) SetDialect(value string) {
+	dc.Dialect = value
 }
 
 func (dc *DatabaseCredentials) SetUsername(value string) {
@@ -75,6 +95,10 @@ func (dc *DatabaseCredentials) SetPassword(value string) {
 
 func (dc *DatabaseCredentials) SetHost(value string) {
 	dc.Host = value
+}
+
+func (dc *DatabaseCredentials) SetPort(value string) {
+	dc.Port = value
 }
 
 func (dc *DatabaseCredentials) SetDatabaseName(value string) {
@@ -90,6 +114,10 @@ func (dc *DatabaseCredentials) SetOutputName(value string) {
 }
 
 func (dc *DatabaseCredentials) InputValidation(app fyne.App) {
+	if dc.Dialect == "" {
+		ShowWindows(app, "Error", "Invalid Dialect")
+		return
+	}
 	if dc.Username == "" {
 		ShowWindows(app, "Error", "Invalid Username")
 		return
@@ -102,16 +130,76 @@ func (dc *DatabaseCredentials) InputValidation(app fyne.App) {
 		ShowWindows(app, "Error", "Invalid Host Address")
 		return
 	}
+	if dc.Port == "" {
+		ShowWindows(app, "Error", "Invalid Port")
+		return
+	} else {
+		if _, err := strconv.Atoi(dc.Port); err != nil {
+			ShowWindows(app, "Error", "Port must be a number")
+			return
+		}
+	}
 	if dc.DatabaseName == "" {
 		ShowWindows(app, "Error", "Invalid Database Name")
 		return
 	}
-	err := JsonDescriptionGenerator(*dc)
+	err := JsonUI(*dc)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
 	}
 	ShowWindows(app, "Success", "Generated Database Json Description Successfully")
+	filename, errFile := dialog.File().Filter("JSON files", "json").Title("Save As").Save()
+	if errFile != nil {
+		ShowWindows(app, "Error", errFile.Error())
+		return
+	}
+	dc.Output = filename + ".json"
+	tokens := strings.Split(filename, string(os.PathSeparator))
+	dc.Package = tokens[len(tokens)-2] // Get package folder name
+}
+
+func (dc *DatabaseCredentials) InputUI() fyne.Window {
+	app := fApp.New()
+	app.Settings().SetTheme(theme.LightTheme())
+	w := app.NewWindow("Database Json Generator")
+	w.Resize(fyne.Size{
+		Width: 640,
+	})
+	dialectEntry := widget.NewEntry()
+	dialectEntry.OnChanged = dc.SetDialect
+	usernameEntry := widget.NewEntry()
+	usernameEntry.OnChanged = dc.SetUsername
+	passwordEntry := widget.NewEntry()
+	passwordEntry.OnChanged = dc.SetPassword
+	passwordEntry.Password = true
+	hostEntry := widget.NewEntry()
+	hostEntry.OnChanged = dc.SetHost
+	portEntry := widget.NewEntry()
+	portEntry.OnChanged = dc.SetPort
+	databaseEntry := widget.NewEntry()
+	databaseEntry.OnChanged = dc.SetDatabaseName
+	w.SetContent(widget.NewVBox(
+		widget.NewLabel("Dialect:"),
+		dialectEntry,
+		widget.NewLabel("Username:"),
+		usernameEntry,
+		widget.NewLabel("Password:"),
+		passwordEntry,
+		widget.NewLabel("Host Address:"),
+		hostEntry,
+		widget.NewLabel("Port:"),
+		portEntry,
+		widget.NewLabel("Database Name:"),
+		databaseEntry,
+		widget.NewButton("Generate Database Json Description", func() {
+			dc.InputValidation(app)
+		}),
+		widget.NewButton("Quit", func() {
+			app.Quit()
+		}),
+	))
+	return w
 }
 
 func ShowWindows(app fyne.App, title, message string) {
@@ -125,48 +213,7 @@ func ShowWindows(app fyne.App, title, message string) {
 	wa.Show()
 }
 
-func (dc *DatabaseCredentials) InputUI() fyne.Window {
-	app := fApp.New()
-	app.Settings().SetTheme(theme.LightTheme())
-	w := app.NewWindow("Database Json Generator")
-	w.Resize(fyne.Size{
-		Width: 640,
-	})
-	usernameEntry := widget.NewEntry()
-	usernameEntry.OnChanged = dc.SetUsername
-	passwordEntry := widget.NewEntry()
-	passwordEntry.OnChanged = dc.SetPassword
-	passwordEntry.Password = true
-	hostEntry := widget.NewEntry()
-	hostEntry.OnChanged = dc.SetHost
-	databaseEntry := widget.NewEntry()
-	databaseEntry.OnChanged = dc.SetDatabaseName
-	packageEntry := widget.NewEntry()
-	packageEntry.OnChanged = dc.SetPackageName ///
-	outputEntry := widget.NewEntry()
-	outputEntry.OnChanged = dc.SetOutputName
-	w.SetContent(widget.NewVBox(
-		widget.NewLabel("Username:"),
-		usernameEntry,
-		widget.NewLabel("Password:"),
-		passwordEntry,
-		widget.NewLabel("Host Address:"),
-		hostEntry,
-		widget.NewLabel("Database Name:"),
-		databaseEntry,
-		widget.NewLabel("Package Name:"),
-		packageEntry,
-		widget.NewLabel("Output Name:"),
-		outputEntry,
-		widget.NewButton("Generate Database Json Description", func() {
-			dc.InputValidation(app)
-		}),
-		widget.NewButton("Quit", func() {
-			app.Quit()
-		}),
-	))
-	return w
-}
+// --------------------------------------------------------------------------------------------------------
 
 type TypeMap map[string]string
 
@@ -299,7 +346,7 @@ func JsonDescriptionGenerator(cre DatabaseCredentials) error { //s *SqlTablesDat
 	files.Env = cre.Package
 	s.InitSqlTablesData()
 	path := "./" + cre.Package + "/"
-	fileDirectory := path + cre.Output + ".json"
+	//fileDirectory := path + cre.Output + ".json"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.Mkdir(path, 0777)
 		if err != nil {
@@ -338,7 +385,65 @@ func JsonDescriptionGenerator(cre DatabaseCredentials) error { //s *SqlTablesDat
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(fileDirectory, data, 0644) // Create and write files
+	err = ioutil.WriteFile(cre.Output, data, 0644) // Create and write files
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func JsonUI(cre DatabaseCredentials) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+	var s SqlTablesData
+	var files FilesDetails
+	conn, err := cre.ConnectToSqlServer()
+	log.Println("Connecting to sql server...")
+	if err != nil {
+		return err
+	}
+	log.Println("Connection to sql server is established successfully")
+	tables := ListAllTableNames(conn, cre.DatabaseName)
+	defer s.FreeResources() // Close connection before freeing resources
+	defer func() {
+		err = conn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	s.InitSqlTablesData()
+	files.Env = cre.Package
+	for _, v := range tables {
+		var m ModelJSON
+		m.Name = v
+		s.InitSqlTable(v, conn)
+		s.StandardizeFieldsName()
+		for i, v := range s.SqlTable {
+			var f FieldElements
+			if s.ContainCompositeKey {
+				f.Source = ToLower(s.GoFields[i])
+			} else {
+				if v.ColumnKey == "PRI" {
+					f.Source = "_id"
+				} else {
+					f.Source = ToLower(s.GoFields[i])
+				}
+			}
+			f.Name = s.GoFields[i]
+			f.Type = s.TypeMap[v.DataType]
+			if v.ColumnKey == "PRI" {
+				f.PrimaryKey = true
+			} else {
+				f.PrimaryKey = false
+			}
+			m.Fields = append(m.Fields, f)
+		}
+		files.Files = append(files.Files, m)
+		s.ResetData() // Reuse Variable
+	}
+	data, err := json.MarshalIndent(&files, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(cre.Output, data, 0644) // Create and write files
 	if err != nil {
 		return err
 	}
