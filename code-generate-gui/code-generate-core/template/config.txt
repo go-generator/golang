@@ -1,0 +1,41 @@
+package config
+
+import (
+	"context"
+	"evaluation/controller"
+
+	"evaluation/service/impl"
+
+	"github.com/common-go/mongo"
+)
+
+
+type ApplicationContext struct {
+	{begin}
+	{entity}Controller               *controller.{entity}Controller
+	{end}
+}
+
+func NewApplicationContext(mongoConfig mongo.MongoConfig, ) (*ApplicationContext, error) {
+	ctx := context.Background()
+	mongoDb, er1 := mongo.SetupMongo(ctx, mongoConfig)
+	if er1 != nil {
+		return nil, er1
+	}
+
+	mongoQueryBuilder := &mongo.DefaultQueryBuilder{}
+	mongoSortBuilder := &mongo.DefaultSortBuilder{}
+	mongoSearchResultBuilder := &mongo.DefaultSearchResultBuilder{
+		Database:     mongoDb,
+		QueryBuilder: mongoQueryBuilder,
+		SortBuilder:  mongoSortBuilder,
+	}
+	activityLogService := impl.NewActivityLogServiceImpl(mongoDb)
+	{begin}
+	{entityLowerFirstCharacter}Service := impl.New{entity}ServiceImpl(mongoDb, mongoSearchResultBuilder)
+	{entityLowerFirstCharacter}Controller := controller.New{entity}Controller({entityLowerFirstCharacter}Service, activityLogService)
+	{end}
+
+
+	return &ApplicationContext{{begin}{entityLowerFirstCharacter}Controller, {end}}, nil
+}

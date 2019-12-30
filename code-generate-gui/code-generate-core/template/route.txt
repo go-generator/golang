@@ -2,8 +2,6 @@ package {env}
 
 import (
 	"evaluation/config"
-    ldap "evaluation/ldap-authentication"
-    "github.com/common-go/auth"
     "github.com/common-go/mongo"
     "github.com/labstack/echo"
     "github.com/labstack/echo/middleware"
@@ -13,8 +11,8 @@ type EvaRoutes struct {
 	Router *echo.Echo
 }
 
-func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig, ldapConfig ldap.LDAPConfig, tokenConfig auth.TokenConfig) (*EvaRoutes, error) {
-	applicationContext, err := config.NewApplicationContext(mongoConfig, ldapConfig, tokenConfig)
+func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*EvaRoutes, error) {
+	applicationContext, err := config.NewApplicationContext(mongoConfig,)
 	if err != nil {
 		return nil, err
 	}
@@ -23,13 +21,7 @@ func NewEvaluationRoutes(e *echo.Echo, mongoConfig mongo.MongoConfig, ldapConfig
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	authenticationController := applicationContext.AuthenticationController
-	e.POST("/authentication/authenticate", authenticationController.Authenticate())
 
-	//signOut
-	signOutController := applicationContext.SignOutController
-	signOutPath := "/authentication/signout/:userName"
-	e.GET(signOutPath, signOutController.SignOut())
     {begin}
 	{entityLowerFirstCharacter}Controller := applicationContext.{entity}Controller
 	{entityLowerFirstCharacter}Path := "/evaluation/{entityLowerFirstCharacter}"
