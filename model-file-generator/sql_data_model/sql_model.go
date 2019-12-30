@@ -51,27 +51,26 @@ type FieldElements struct {
 	PrimaryKey bool   `json:"primaryKey"`
 }
 
-type DatabaseCredentials struct {
-	Dialect      string
-	Port         string
-	Username     string
-	Host         string
-	Password     string
-	DatabaseName string
-	Package      string
-	Output       string
+type DatabaseConfig struct {
+	Dialect  string `mapstructure:"dialect"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Database string `mapstructure:"database"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
 }
 
-func (dc *DatabaseCredentials) ConnectToSqlServer() (*gorm.DB, error) {
+func (dc *DatabaseConfig) ConnectToSqlServer() (*gorm.DB, error) {
 	var conn *gorm.DB
 	var err error
+	port := strconv.Itoa(dc.Port)
 	switch dc.Dialect {
 	case "mysql":
-		conn, err = gorm.Open("mysql", dc.Username+":"+dc.Password+"@("+dc.Host+":"+dc.Port+")/"+dc.DatabaseName+"?charset=utf8&parseTime=True&loc=Local")
+		conn, err = gorm.Open("mysql", dc.User+":"+dc.Password+"@("+dc.Host+":"+port+")/"+dc.Database+"?charset=utf8&parseTime=True&loc=Local")
 	case "postgres":
-		conn, err = gorm.Open(dc.Dialect, "user="+dc.Username+" dbname="+dc.DatabaseName+" password="+dc.Password+" host="+dc.Host+" port="+dc.Port+" sslmode=disable")
+		conn, err = gorm.Open(dc.Dialect, "user="+dc.User+" dbname="+dc.Database+" password="+dc.Password+" host="+dc.Host+" port="+port+" sslmode=disable")
 	case "mssql":
-		conn, err = gorm.Open(dc.Dialect, "sqlserver://"+dc.Username+":"+dc.Password+"@"+dc.Host+":"+dc.Port+"?Database="+dc.Port)
+		conn, err = gorm.Open(dc.Dialect, "sqlserver://"+dc.User+":"+dc.Password+"@"+dc.Host+":"+port+"?Database="+dc.Database)
 	case "sqlite3":
 		conn, err = gorm.Open("sqlite3", dc.Host)
 	default:
@@ -81,45 +80,41 @@ func (dc *DatabaseCredentials) ConnectToSqlServer() (*gorm.DB, error) {
 	return conn, err
 }
 
-func (dc *DatabaseCredentials) SetDialect(value string) {
+func (dc *DatabaseConfig) SetDialect(value string) {
 	dc.Dialect = value
 }
 
-func (dc *DatabaseCredentials) SetUsername(value string) {
-	dc.Username = value
+func (dc *DatabaseConfig) SetUsername(value string) {
+	dc.User = value
 }
 
-func (dc *DatabaseCredentials) SetPassword(value string) {
+func (dc *DatabaseConfig) SetPassword(value string) {
 	dc.Password = value
 }
 
-func (dc *DatabaseCredentials) SetHost(value string) {
+func (dc *DatabaseConfig) SetHost(value string) {
 	dc.Host = value
 }
 
-func (dc *DatabaseCredentials) SetPort(value string) {
-	dc.Port = value
+func (dc *DatabaseConfig) SetPort(value string) {
+	var err error
+	dc.Port, err = strconv.Atoi(value)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-func (dc *DatabaseCredentials) SetDatabaseName(value string) {
-	dc.DatabaseName = value
+func (dc *DatabaseConfig) SetDatabaseName(value string) {
+	dc.Database = value
 }
 
-func (dc *DatabaseCredentials) SetPackageName(value string) {
-	dc.Package = value
-}
-
-func (dc *DatabaseCredentials) SetOutputName(value string) {
-	dc.Output = value
-}
-
-func (dc *DatabaseCredentials) InputValidation(app fyne.App) {
+func (dc *DatabaseConfig) InputValidation(app fyne.App) {
 	if dc.Dialect == "" {
 		ShowWindows(app, "Error", "Invalid Dialect")
 		return
 	}
-	if dc.Username == "" {
-		ShowWindows(app, "Error", "Invalid Username")
+	if dc.User == "" {
+		ShowWindows(app, "Error", "Invalid User")
 		return
 	}
 	if dc.Password == "" {
@@ -130,36 +125,29 @@ func (dc *DatabaseCredentials) InputValidation(app fyne.App) {
 		ShowWindows(app, "Error", "Invalid Host Address")
 		return
 	}
-	if dc.Port == "" {
+	if _, err := strconv.Atoi(strconv.Itoa(dc.Port)); err != nil {
 		ShowWindows(app, "Error", "Invalid Port")
 		return
-	} else {
-		if _, err := strconv.Atoi(dc.Port); err != nil {
-			ShowWindows(app, "Error", "Port must be a number")
-			return
-		}
 	}
-	if dc.DatabaseName == "" {
+	if dc.Database == "" {
 		ShowWindows(app, "Error", "Invalid Database Name")
 		return
 	}
-	err := JsonUI(*dc)
-	if err != nil {
-		ShowWindows(app, "Error", err.Error())
-		return
-	}
-	ShowWindows(app, "Success", "Generated Database Json Description Successfully")
 	filename, errFile := dialog.File().Filter("JSON files", "json").Title("Save As").Save()
 	if errFile != nil {
 		ShowWindows(app, "Error", errFile.Error())
 		return
 	}
-	dc.Output = filename + ".json"
 	tokens := strings.Split(filename, string(os.PathSeparator))
-	dc.Package = tokens[len(tokens)-2] // Get package folder name
+	err := dc.JsonUI(tokens[len(tokens)-2], filename+".json")
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
+		return
+	}
+	ShowWindows(app, "Success", "Generated Database Json Description Successfully")
 }
 
-func (dc *DatabaseCredentials) InputUI() fyne.Window {
+func (dc *DatabaseConfig) InputUI() fyne.Window {
 	app := fApp.New()
 	app.Settings().SetTheme(theme.LightTheme())
 	w := app.NewWindow("Database Json Generator")
@@ -182,7 +170,7 @@ func (dc *DatabaseCredentials) InputUI() fyne.Window {
 	w.SetContent(widget.NewVBox(
 		widget.NewLabel("Dialect:"),
 		dialectEntry,
-		widget.NewLabel("Username:"),
+		widget.NewLabel("User:"),
 		usernameEntry,
 		widget.NewLabel("Password:"),
 		passwordEntry,
@@ -323,19 +311,19 @@ func (s *SqlTablesData) CreateContent(packageName string) {
 	s.WriteStruct()
 }
 
-func JsonDescriptionGenerator(cre DatabaseCredentials) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+func (dc *DatabaseConfig) JsonDescriptionGenerator(env, output string) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
 	var s SqlTablesData
 	var files FilesDetails
-	if cre.Output == "" {
-		cre.Output = "database_description"
+	if env == "" {
+		env = "database_description"
 	}
-	conn, err := cre.ConnectToSqlServer()
+	conn, err := dc.ConnectToSqlServer()
 	log.Println("Connecting to sql server...")
 	if err != nil {
 		return err
 	}
 	log.Println("Connection to sql server is established successfully")
-	tables := ListAllTableNames(conn, cre.DatabaseName)
+	tables := ListAllTableNames(conn, dc.Database)
 	defer s.FreeResources() // Close connection before freeing resources
 	defer func() {
 		err = conn.Close()
@@ -343,10 +331,10 @@ func JsonDescriptionGenerator(cre DatabaseCredentials) error { //s *SqlTablesDat
 			log.Fatal(err)
 		}
 	}()
-	files.Env = cre.Package
+	files.Env = env
 	s.InitSqlTablesData()
-	path := "./" + cre.Package + "/"
-	//fileDirectory := path + cre.Output + ".json"
+	path := "./" + output + "/"
+	fileDirectory := path + output + ".json"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.Mkdir(path, 0777)
 		if err != nil {
@@ -385,23 +373,23 @@ func JsonDescriptionGenerator(cre DatabaseCredentials) error { //s *SqlTablesDat
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(cre.Output, data, 0644) // Create and write files
+	err = ioutil.WriteFile(fileDirectory, data, 0644) // Create and write files
 	if err != nil {
 		return err
 	}
 	return err
 }
 
-func JsonUI(cre DatabaseCredentials) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+func (dc *DatabaseConfig) JsonUI(env, filePath string) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
 	var s SqlTablesData
 	var files FilesDetails
-	conn, err := cre.ConnectToSqlServer()
+	conn, err := dc.ConnectToSqlServer()
 	log.Println("Connecting to sql server...")
 	if err != nil {
 		return err
 	}
 	log.Println("Connection to sql server is established successfully")
-	tables := ListAllTableNames(conn, cre.DatabaseName)
+	tables := ListAllTableNames(conn, dc.Database)
 	defer s.FreeResources() // Close connection before freeing resources
 	defer func() {
 		err = conn.Close()
@@ -410,7 +398,7 @@ func JsonUI(cre DatabaseCredentials) error { //s *SqlTablesData, conn *gorm.DB, 
 		}
 	}()
 	s.InitSqlTablesData()
-	files.Env = cre.Package
+	files.Env = env
 	for _, v := range tables {
 		var m ModelJSON
 		m.Name = v
@@ -443,7 +431,7 @@ func JsonUI(cre DatabaseCredentials) error { //s *SqlTablesData, conn *gorm.DB, 
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(cre.Output, data, 0644) // Create and write files
+	err = ioutil.WriteFile(filePath, data, 0644) // Create and write files
 	if err != nil {
 		return err
 	}

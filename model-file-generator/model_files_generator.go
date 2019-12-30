@@ -3,24 +3,32 @@ package main
 import (
 	"flag"
 	"log"
+	"strconv"
 
 	. "./sql_data_model"
 )
 
 func RunWithCommandLine() {
+	dialectPtr := flag.String("dialect", "", "input dialect")
 	userPtr := flag.String("username", "", "input username")
 	passPtr := flag.String("password", "", "input password")
-	dbNamePtr := flag.String("dbName", "", "input database name")
 	hostPtr := flag.String("host", "", "input host")
+	portPtr := flag.String("port", "", "input port")
+	dbNamePtr := flag.String("dbName", "", "input database name")
 	packagePtr := flag.String("package", "", "input package name")
 	outputPtr := flag.String("output", "", "input file output name")
+	port, err := strconv.Atoi(*portPtr)
+	if err != nil {
+		log.Println(err)
+	}
 	flag.Parse()
-	cre := DatabaseCredentials{
-		Username:     *userPtr,
-		Password:     *passPtr,
-		DatabaseName: *dbNamePtr,
-		Package:      *packagePtr,
-		Output:       *outputPtr,
+	cre := DatabaseConfig{
+		Dialect:  *dialectPtr,
+		User:     *userPtr,
+		Password: *passPtr,
+		Host:     *hostPtr,
+		Port:     port,
+		Database: *dbNamePtr,
 	}
 	if *hostPtr == "" {
 		cre.Host = "127.0.0.1:3306"
@@ -28,14 +36,14 @@ func RunWithCommandLine() {
 	if *outputPtr == "" {
 		*outputPtr = "database"
 	}
-	err := JsonDescriptionGenerator(cre)
+	err = cre.JsonDescriptionGenerator(*packagePtr, *outputPtr)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }
 
 func RunWithUI() {
-	var cre DatabaseCredentials
+	var cre DatabaseConfig
 	cre.InputUI().ShowAndRun()
 }
 
