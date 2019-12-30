@@ -79,5 +79,5 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ldapConfig as.LDAPConf
 	signOutService := impl.NewSignOutServiceImpl()
 	signOutController := NewSignOutController(signOutService, activityLogService)
 
-	return &ApplicationContext{batchController, schemeController, candidateController, authenticationController,candidateEvaluationController,signOutController}, nil
+	return &ApplicationContext{{begin}{entityLowerFirstCharacter}Controller,{end}}, nil
 }
