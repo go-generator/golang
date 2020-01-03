@@ -1,4 +1,4 @@
-package sql_data_model
+package database_config
 
 import (
 	"encoding/json"
@@ -8,16 +8,27 @@ import (
 	"strconv"
 	"strings"
 
-	. "../model_files_functions"
 	"fyne.io/fyne"
 	fApp "fyne.io/fyne/app"
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mssql"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/pkg/errors"
 	"github.com/sqweek/dialog"
 )
+
+type DatabaseConfig struct {
+	Dialect  string `mapstructure:"dialect"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Database string `mapstructure:"database"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+}
 
 type FilesDetails struct {
 	Env   string      `json:"env"`
@@ -48,16 +59,8 @@ type FieldElements struct {
 	Name       string `json:"name"`
 	Source     string `json:"source"`
 	Type       string `json:"type"`
+	ForeignKey string `json:"foreignKey"`
 	PrimaryKey bool   `json:"primaryKey"`
-}
-
-type DatabaseConfig struct {
-	Dialect  string `mapstructure:"dialect"`
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	Database string `mapstructure:"database"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
 }
 
 func (dc *DatabaseConfig) ConnectToSqlServer() (*gorm.DB, error) {
@@ -174,11 +177,11 @@ func (dc *DatabaseConfig) InputUI() fyne.Window {
 		usernameEntry,
 		widget.NewLabel("Password:"),
 		passwordEntry,
-		widget.NewLabel("Host Address:"),
+		widget.NewLabel("Host:"),
 		hostEntry,
 		widget.NewLabel("Port:"),
 		portEntry,
-		widget.NewLabel("Database Name:"),
+		widget.NewLabel("Database:"),
 		databaseEntry,
 		widget.NewButton("Generate Database Json Description", func() {
 			dc.InputValidation(app)
@@ -201,7 +204,63 @@ func ShowWindows(app fyne.App, title, message string) {
 	wa.Show()
 }
 
-// --------------------------------------------------------------------------------------------------------
+func (dc *DatabaseConfig) JsonUI(env, filePath string) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+	var s SqlTablesData
+	var files FilesDetails
+	conn, err := dc.ConnectToSqlServer()
+	log.Println("Connecting to sql server...")
+	if err != nil {
+		return err
+	}
+	log.Println("Connection to sql server is established successfully")
+	tables := ListAllTableNames(conn, dc.Database)
+	defer s.FreeResources() // Close connection before freeing resources
+	defer func() {
+		err = conn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	s.InitSqlTablesData()
+	files.Env = env
+	for _, v := range tables {
+		var m ModelJSON
+		m.Name = v
+		s.InitSqlTable(v, conn)
+		s.StandardizeFieldsName()
+		for i, v := range s.SqlTable {
+			var f FieldElements
+			if s.ContainCompositeKey {
+				f.Source = ToLower(s.GoFields[i])
+			} else {
+				if v.ColumnKey == "PRI" {
+					f.Source = "_id"
+				} else {
+					f.Source = ToLower(s.GoFields[i])
+				}
+			}
+			f.Name = s.GoFields[i]
+			f.Type = s.TypeMap[v.DataType]
+			if v.ColumnKey == "PRI" {
+				f.PrimaryKey = true
+			} else {
+				f.PrimaryKey = false
+			}
+			m.Fields = append(m.Fields, f)
+		}
+		files.Files = append(files.Files, m)
+		s.ResetData() // Reuse Variable
+	}
+	data, err := json.MarshalIndent(&files, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filePath, data, 0644) // Create and write files
+	if err != nil {
+		return err
+	}
+	return err
+}
 
 type TypeMap map[string]string
 
@@ -311,26 +370,14 @@ func (s *SqlTablesData) CreateContent(packageName string) {
 	s.WriteStruct()
 }
 
-func (dc *DatabaseConfig) JsonDescriptionGenerator(env, output string) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+func (dc *DatabaseConfig) JsonDescriptionGenerator(env, output string, conn *gorm.DB) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
 	var s SqlTablesData
 	var files FilesDetails
 	if env == "" {
 		env = "database_description"
 	}
-	conn, err := dc.ConnectToSqlServer()
-	log.Println("Connecting to sql server...")
-	if err != nil {
-		return err
-	}
-	log.Println("Connection to sql server is established successfully")
 	tables := ListAllTableNames(conn, dc.Database)
 	defer s.FreeResources() // Close connection before freeing resources
-	defer func() {
-		err = conn.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
 	files.Env = env
 	s.InitSqlTablesData()
 	path := "./" + output + "/"
@@ -378,85 +425,4 @@ func (dc *DatabaseConfig) JsonDescriptionGenerator(env, output string) error { /
 		return err
 	}
 	return err
-}
-
-func (dc *DatabaseConfig) JsonUI(env, filePath string) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
-	var s SqlTablesData
-	var files FilesDetails
-	conn, err := dc.ConnectToSqlServer()
-	log.Println("Connecting to sql server...")
-	if err != nil {
-		return err
-	}
-	log.Println("Connection to sql server is established successfully")
-	tables := ListAllTableNames(conn, dc.Database)
-	defer s.FreeResources() // Close connection before freeing resources
-	defer func() {
-		err = conn.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	s.InitSqlTablesData()
-	files.Env = env
-	for _, v := range tables {
-		var m ModelJSON
-		m.Name = v
-		s.InitSqlTable(v, conn)
-		s.StandardizeFieldsName()
-		for i, v := range s.SqlTable {
-			var f FieldElements
-			if s.ContainCompositeKey {
-				f.Source = ToLower(s.GoFields[i])
-			} else {
-				if v.ColumnKey == "PRI" {
-					f.Source = "_id"
-				} else {
-					f.Source = ToLower(s.GoFields[i])
-				}
-			}
-			f.Name = s.GoFields[i]
-			f.Type = s.TypeMap[v.DataType]
-			if v.ColumnKey == "PRI" {
-				f.PrimaryKey = true
-			} else {
-				f.PrimaryKey = false
-			}
-			m.Fields = append(m.Fields, f)
-		}
-		files.Files = append(files.Files, m)
-		s.ResetData() // Reuse Variable
-	}
-	data, err := json.MarshalIndent(&files, "", " ")
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filePath, data, 0644) // Create and write files
-	if err != nil {
-		return err
-	}
-	return err
-}
-
-func ModelGoFilesGenerator(s *SqlTablesData, conn *gorm.DB, tables []string, packageName string) {
-	s.InitSqlTablesData()
-	path := "./" + packageName + "/"
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.Mkdir(path, 0777)
-		if err != nil {
-			log.Fatal("Failed attempt to create directory, " + err.Error())
-		}
-	}
-	for _, v := range tables {
-		fileDirectory := "./" + packageName + "/" + v + ".go"
-		s.InitSqlTable(v, conn)
-		s.StandardizeFieldsName()
-		s.CreateContent(packageName)
-		err := ioutil.WriteFile(fileDirectory, []byte(s.WriteFile.String()), 0777) // Create and write files
-		if err != nil {
-			log.Fatal("Failed attempt to write model file," + err.Error())
-		}
-		s.ResetData() // Reuse Variable
-	}
-	log.Println("Model files are generated successfully")
 }

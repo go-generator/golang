@@ -1,4 +1,4 @@
-package model_files_functions
+package database_config
 
 import (
 	"strings"

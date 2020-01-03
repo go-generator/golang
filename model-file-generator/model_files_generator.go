@@ -5,7 +5,8 @@ import (
 	"log"
 	"strconv"
 
-	. "./sql_data_model"
+	. "../database_config"
+	. "../database_relationship"
 )
 
 func RunWithCommandLine() {
@@ -17,12 +18,12 @@ func RunWithCommandLine() {
 	dbNamePtr := flag.String("dbName", "", "input database name")
 	packagePtr := flag.String("package", "", "input package name")
 	outputPtr := flag.String("output", "", "input file output name")
+	flag.Parse()
 	port, err := strconv.Atoi(*portPtr)
 	if err != nil {
 		log.Println(err)
 	}
-	flag.Parse()
-	cre := DatabaseConfig{
+	dbConfig := DatabaseConfig{
 		Dialect:  *dialectPtr,
 		User:     *userPtr,
 		Password: *passPtr,
@@ -31,12 +32,18 @@ func RunWithCommandLine() {
 		Database: *dbNamePtr,
 	}
 	if *hostPtr == "" {
-		cre.Host = "127.0.0.1:3306"
+		dbConfig.Host = "127.0.0.1:3306"
 	}
 	if *outputPtr == "" {
 		*outputPtr = "database"
 	}
-	err = cre.JsonDescriptionGenerator(*packagePtr, *outputPtr)
+	conn, err := dbConfig.ConnectToSqlServer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	log.Println(DatabaseRelationships(dbConfig, conn))
+	err = dbConfig.JsonDescriptionGenerator(*packagePtr, *outputPtr, conn)
 	if err != nil {
 		log.Println(err)
 	}
@@ -48,6 +55,6 @@ func RunWithUI() {
 }
 
 func main() {
-	//RunWithCommandLine()
-	RunWithUI()
+	RunWithCommandLine()
+	//RunWithUI()
 }
