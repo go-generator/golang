@@ -1,0 +1,7 @@
+{"_id":"4","source":"candidate","path":"/candidate","method":"POST","detail":"create","driverName":"mongo","dbName":"evaluation","dataSourceName":"mongodb://localhost:27017"}
+{"_id":"5","source":"candidate","path":"/candidate","method":"GET","detail":"getAll","driverName":"postgres","dbName":"evaluation","dataSourceName":"host=localhost port=5432 user=postgres password=123456 dbname=evaluation sslmode=disable"}
+{"_id":"6","source":"candidate","path":"/candidate/:id","method":"GET","detail":"getById","driverName":"mysql","dbName":"evaluation","dataSourceName":"root:123456@/evaluation"}
+{"_id":"1","source":"candidate","path":"/candidate/:od","method":"PUT","detail":"update","driverName":"mongo","dbName":"evaluation","dataSourceName":"mongodb://localhost:27017"}
+{"_id":"2","source":"candidate","path":"/candidate/:odd","method":"DELETE","detail":"delete","driverName":"mongo","dbName":"evaluation","dataSourceName":"mongodb://localhost:27017"}
+{"_id":"7","source":"candidate","path":"/candidate/:id","method":"PUT","detail":"update","driverName":"mysql","dbName":"evaluation","dataSourceName":"root:123456@/evaluation"}
+{"_id":"8","source":"candidate","path":"/candidate/:id","method":"DELETE","detail":"delete","driverName":"mysql","dbName":"evaluation","dataSourceName":"root:123456@/evaluation"}
