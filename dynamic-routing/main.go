@@ -101,7 +101,7 @@ func IntValidate(k string, valueString string, v *int64, errList *[]ErrorMessage
 	}
 	return nil
 }
-func Validator(source string, mo ModelJSONList, input *map[string]interface{}) []ErrorMessage {
+func Validator(source string, mo ModelJSONList, input map[string]interface{}) []ErrorMessage {
 	var errList []ErrorMessage
 	t := -1
 	for i := range mo {
@@ -118,7 +118,7 @@ func Validator(source string, mo ModelJSONList, input *map[string]interface{}) [
 		}}
 	}
 
-	for k, v := range *input {
+	for k, v := range input {
 		valueString, ok := v.(string)
 		contain := false
 		if ok {
@@ -130,13 +130,13 @@ func Validator(source string, mo ModelJSONList, input *map[string]interface{}) [
 						var tmp time.Time
 						err := DateTimeValidate(k, valueString, &tmp, &errList)
 						if err == nil {
-							(*input)[k] = tmp
+							(input)[k] = tmp
 						}
 					case "int":
 						var tmp int64
 						err := IntValidate(k, valueString, &tmp, &errList)
 						if err == nil {
-							(*input)[k] = tmp
+							(input)[k] = tmp
 						}
 					}
 					break
@@ -187,10 +187,10 @@ func (info RouteInfo) PathHandler(c echo.Context) error {
 	case "getAll":
 		err = t.GetAll()
 	case "create":
-		_ = Validator(info.Source, m, &input)
+		_ = Validator(info.Source, m, input)
 		err = t.Create()
 	case "update":
-		_ = Validator(info.Source, m, &input)
+		_ = Validator(info.Source, m, input)
 		err = t.Update()
 	case "delete":
 		err = t.Delete()
@@ -213,7 +213,7 @@ func ReadRouteFromMongo(r *RouteList) error {
 	if err != nil {
 		return err
 	}
-	collection := db.Collection("route")
+	collection := db.Collection("mySqlRoute")
 	result, err := collection.Find(ctx, bson.D{})
 	if err != nil {
 		return err
