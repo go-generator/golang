@@ -1,0 +1,12 @@
+typeConvert:
+  decimal: "int"
+  char: "string"
+  varchar: "string"
+  int: "int"
+  timestamp: "time.Time"
+  date: "time.Time"
+  text: "string"
+  smallint: "int8"
+  bigint: "int64"
+  mediumtext: "string"
+  mediumblob: "[]byte"
