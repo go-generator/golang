@@ -1,0 +1,111 @@
+{
+  "_id": "1",
+  "name": "payment",
+  "source": "",
+  "const": null,
+  "type_alias": null,
+  "fields": [
+    {
+      "name": "Amount",
+      "source": "amount",
+      "type": "int",
+      "primaryKey": false
+    },
+    {
+      "name": "ChargeType",
+      "source": "chargeType",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "CreditBankAccount",
+      "source": "creditBankAccount",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "CurrencyCode",
+      "source": "currencyCode",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "DebitBankAccount",
+      "source": "debitBankAccount",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "ExternalSystemId",
+      "source": "externalSystemId",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "FeeAmount",
+      "source": "feeAmount",
+      "type": "int",
+      "primaryKey": false
+    },
+    {
+      "name": "FeeDebitBankAccount",
+      "source": "feeDebitBankAccount",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "FeeDueDate",
+      "source": "feeDueDate",
+      "type": "time.Time",
+      "primaryKey": false
+    },
+    {
+      "name": "PayeeId",
+      "source": "payeeId",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "PayerId",
+      "source": "payerId",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "PaymentDate",
+      "source": "paymentDate",
+      "type": "time.Time",
+      "primaryKey": false
+    },
+    {
+      "name": "PaymentId",
+      "source": "_id",
+      "type": "string",
+      "primaryKey": true
+    },
+    {
+      "name": "PaymentStatus",
+      "source": "paymentStatus",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "PostingType",
+      "source": "postingType",
+      "type": "string",
+      "primaryKey": false
+    },
+    {
+      "name": "TransFeeId",
+      "source": "transFeeId",
+      "type": "int",
+      "primaryKey": false
+    },
+    {
+      "name": "UpdatedDate",
+      "source": "updatedDate",
+      "type": "time.Time",
+      "primaryKey": false
+    }
+  ]
+}
