@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 func (t SqlType) GetById() error {
@@ -88,6 +89,24 @@ func (t SqlType) GetAll() error {
 	*t.OutputString = tmp2
 	return nil
 }
+func PrepareStatementPicker(dbName string, count int) string {
+	switch dbName {
+	case "mysql":
+		return "?,"
+	case "postgres":
+		return fmt.Sprintf("$%v,", count)
+	}
+	return ""
+}
+func InsertIntoSyntaxPicker(dbName string, k string) string {
+	switch dbName {
+	case "mysql":
+		return "`" + k + "`,"
+	case "postgres":
+		return "" + k + ","
+	}
+	return ""
+}
 func (t SqlType) Create() error {
 	db2, err := sql.Open(t.Info.DriverName, t.Info.DataSourceName)
 	if err != nil {
@@ -97,10 +116,12 @@ func (t SqlType) Create() error {
 	query := "INSERT INTO " + t.Info.Source + "("
 	query2 := ") VALUES ("
 	s1 := []interface{}{}
+	count := 1
 	for k, v := range t.InputMap {
-		query += "`" + k + "`,"
+		query += InsertIntoSyntaxPicker(t.Info.DriverName, k)
 		s1 = append(s1, v)
-		query2 += "?,"
+		query2 += PrepareStatementPicker(t.Info.DriverName, count)
+		count++
 	}
 	query2 = query2[:len(query2)-1] + ")"
 	query = query[:len(query)-1] + query2
@@ -108,7 +129,10 @@ func (t SqlType) Create() error {
 	if err != nil {
 		return err
 	}
-	pre.Exec(s1...)
+	_, err = pre.Exec(s1...)
+	if err != nil {
+		return err
+	}
 
 	*t.OutputString = "Created Successfully"
 	return nil
