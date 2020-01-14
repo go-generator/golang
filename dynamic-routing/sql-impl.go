@@ -5,17 +5,38 @@ import (
 	"fmt"
 )
 
+func PrepareStatementPicker(dbName string, count int) string {
+	switch dbName {
+	case "mysql":
+		return "?"
+	case "postgres":
+		return fmt.Sprintf("$%v", count)
+	case "sqlserver":
+		return fmt.Sprintf("@p%v", count)
+	}
+	return ""
+}
+func InsertIntoSyntaxPicker(dbName string, k string) string {
+	switch dbName {
+	case "mysql":
+		return "`" + k + "`"
+	case "postgres", "sqlserver":
+		return k
+	}
+	return ""
+}
 func (t SqlType) GetById() error {
 	db2, err := sql.Open(t.Info.DriverName, t.Info.DataSourceName)
 	if err != nil {
 		return err
 	}
 	defer db2.Close()
-	query := "SELECT * FROM " + t.Info.Source + " WHERE _id ='" + t.IdParam + "'"
-	rows, err := db2.Query(query)
+	query := "SELECT * FROM " + t.Info.Source + " WHERE _id =" + PrepareStatementPicker(t.Info.DriverName, 1)
+	rows, err := db2.Query(query, t.IdParam)
 	if err != nil {
 		return err
 	}
+
 	columns, err := rows.Columns()
 	if err != nil {
 		return err
@@ -89,24 +110,6 @@ func (t SqlType) GetAll() error {
 	*t.OutputString = tmp2
 	return nil
 }
-func PrepareStatementPicker(dbName string, count int) string {
-	switch dbName {
-	case "mysql":
-		return "?,"
-	case "postgres":
-		return fmt.Sprintf("$%v,", count)
-	}
-	return ""
-}
-func InsertIntoSyntaxPicker(dbName string, k string) string {
-	switch dbName {
-	case "mysql":
-		return "`" + k + "`,"
-	case "postgres":
-		return "" + k + ","
-	}
-	return ""
-}
 func (t SqlType) Create() error {
 	db2, err := sql.Open(t.Info.DriverName, t.Info.DataSourceName)
 	if err != nil {
@@ -118,9 +121,9 @@ func (t SqlType) Create() error {
 	s1 := []interface{}{}
 	count := 1
 	for k, v := range t.InputMap {
-		query += InsertIntoSyntaxPicker(t.Info.DriverName, k)
+		query += InsertIntoSyntaxPicker(t.Info.DriverName, k) + ","
 		s1 = append(s1, v)
-		query2 += PrepareStatementPicker(t.Info.DriverName, count)
+		query2 += PrepareStatementPicker(t.Info.DriverName, count) + ","
 		count++
 	}
 	query2 = query2[:len(query2)-1] + ")"
@@ -144,15 +147,16 @@ func (t SqlType) Update() error {
 	}
 	defer db2.Close()
 	query := "UPDATE " + t.Info.Source + " SET "
+	count := 1
+	s1 := []interface{}{}
 	for k, v := range t.InputMap {
-		tmp, ok := v.(string)
-		if ok {
-			query += k + "= '" + tmp + "',"
-		}
-
+		query += InsertIntoSyntaxPicker(t.Info.DriverName, k) + "= " + PrepareStatementPicker(t.Info.DriverName, count) + ","
+		count++
+		s1 = append(s1, v)
 	}
-	query = query[:len(query)-1] + " WHERE (_id = '" + t.IdParam + "')"
-	_, err = db2.Query(query)
+	query = query[:len(query)-1] + " WHERE (_id = " + PrepareStatementPicker(t.Info.DriverName, count) + ")"
+	s1 = append(s1, t.IdParam)
+	_, err = db2.Query(query, s1...)
 	if err != nil {
 		return err
 	}
@@ -165,8 +169,8 @@ func (t SqlType) Delete() error {
 		return err
 	}
 	defer db2.Close()
-	query := "DELETE FROM " + t.Info.Source + " WHERE _id= '" + t.IdParam + "'"
-	_, err = db2.Query(query)
+	query := "DELETE FROM " + t.Info.Source + " WHERE _id=" + PrepareStatementPicker(t.Info.DriverName, 1)
+	_, err = db2.Query(query, t.IdParam)
 	if err != nil {
 		return err
 	}

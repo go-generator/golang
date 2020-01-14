@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/common-go/mongo"
+	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo"
 	_ "github.com/lib/pq"
@@ -213,7 +214,7 @@ func ReadRouteFromMongo(r *RouteList) error {
 	if err != nil {
 		return err
 	}
-	collection := db.Collection("mySqlRoute")
+	collection := db.Collection("sqlServerRoute")
 	result, err := collection.Find(ctx, bson.D{})
 	if err != nil {
 		return err
