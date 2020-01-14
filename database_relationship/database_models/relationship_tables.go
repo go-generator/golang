@@ -12,9 +12,10 @@ type RelationshipTables struct {
 	Column           string `gorm:"column:COLUMN_NAME"`
 	ReferencedTable  string `gorm:"column:REFERENCED_TABLE_NAME"`
 	ReferencedColumn string `gorm:"column:REFERENCED_COLUMN_NAME"`
+	Relationship     string
 }
 
-func (rt *RelationshipTables) checkRelation(check, checkReference bool, database string, connection *DatabaseConnection) string {
+func checkRelation(check, checkReference bool, database string, connection *DatabaseConnection, rt *RelationshipTables) string {
 	// Already cover the MTM case where a joined table consists of two or more primary key tags that are all foreign keys
 	isPrimaryTag := CheckPrimaryTag(database, rt.Table, rt.Column, connection.GetConnection())
 	isReferencedPrimaryTag := CheckPrimaryTag(database, rt.ReferencedTable, rt.ReferencedColumn, connection.GetConnection())
@@ -31,7 +32,7 @@ func (rt *RelationshipTables) checkRelation(check, checkReference bool, database
 				return MTO
 			}
 		}
-		if len(count) > 1 { // Consist of at least one column that is primary key and not referenced to other table
+		if len(count) > 1 { // Consist of at least one column that has primary key tag and not referenced to other table
 			return OTM
 		}
 	}
@@ -44,7 +45,7 @@ func (rt *RelationshipTables) checkRelation(check, checkReference bool, database
 	return UNK
 }
 
-func (rt *RelationshipTables) FindRelationShip(database string, connection *DatabaseConnection, joinedTable []string) string {
+func FindRelationShip(database string, connection *DatabaseConnection, joinedTable []string, rt *RelationshipTables) string {
 	check := CheckUniqueness(database, rt.Table, rt.Column, connection.GetConnection())
 	checkReference := CheckUniqueness(database, rt.ReferencedTable, rt.ReferencedColumn, connection.GetConnection())
 	for _, v := range joinedTable {
@@ -52,7 +53,7 @@ func (rt *RelationshipTables) FindRelationShip(database string, connection *Data
 			return MTM
 		}
 	}
-	return rt.checkRelation(check, checkReference, database, connection)
+	return checkRelation(check, checkReference, database, connection, rt)
 }
 
 func CheckForeignKey(table, column string, rt []RelationshipTables) bool {
@@ -89,4 +90,13 @@ func ListAllJoinTablesWithCompositeKey(database string, conn *gorm.DB, rt []Rela
 		}
 	}
 	return joinTable
+}
+
+func GetRelationship(column string, rt []RelationshipTables) *RelationshipTables {
+	for _, v := range rt {
+		if column == v.ReferencedColumn {
+			return &v
+		}
+	}
+	return nil
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"strconv"
 
 	. "../database_config"
 	. "../database_relationship"
@@ -14,21 +13,17 @@ func RunWithCommandLine() {
 	userPtr := flag.String("username", "", "input username")
 	passPtr := flag.String("password", "", "input password")
 	hostPtr := flag.String("host", "", "input host")
-	portPtr := flag.String("port", "", "input port")
+	portPtr := flag.Int("port", 0, "input port")
 	dbNamePtr := flag.String("dbName", "", "input database name")
 	packagePtr := flag.String("package", "", "input package name")
 	outputPtr := flag.String("output", "", "input file output name")
 	flag.Parse()
-	port, err := strconv.Atoi(*portPtr)
-	if err != nil {
-		log.Println(err)
-	}
 	dbConfig := DatabaseConfig{
 		Dialect:  *dialectPtr,
 		User:     *userPtr,
 		Password: *passPtr,
 		Host:     *hostPtr,
-		Port:     port,
+		Port:     *portPtr,
 		Database: *dbNamePtr,
 	}
 	if *hostPtr == "" {
@@ -41,17 +36,22 @@ func RunWithCommandLine() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
-	log.Println(DatabaseRelationships(dbConfig, conn))
-	err = dbConfig.JsonDescriptionGenerator(*packagePtr, *outputPtr, conn)
+	defer func() {
+		err = conn.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+	rl, _ := DatabaseRelationships(dbConfig, conn)
+	err = JsonDescriptionGenerator(*packagePtr, *outputPtr, conn, &dbConfig, rl)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 func RunWithUI() {
-	var cre DatabaseConfig
-	cre.InputUI().ShowAndRun()
+	var dbConfig DatabaseConfig
+	InputUI(&dbConfig).ShowAndRun()
 }
 
 func main() {
