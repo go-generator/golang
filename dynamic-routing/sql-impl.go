@@ -96,19 +96,20 @@ func (t SqlType) Create() error {
 	defer db2.Close()
 	query := "INSERT INTO " + t.Info.Source + "("
 	query2 := ") VALUES ("
+	s1 := []interface{}{}
 	for k, v := range t.InputMap {
-		query += k + ","
-		tmp, ok := v.(string)
-		if ok {
-			query2 += "'" + tmp + "',"
-		}
+		query += "`" + k + "`,"
+		s1 = append(s1, v)
+		query2 += "?,"
 	}
 	query2 = query2[:len(query2)-1] + ")"
 	query = query[:len(query)-1] + query2
-	_, err = db2.Query(query)
+	pre, err := db2.Prepare(query)
 	if err != nil {
 		return err
 	}
+	pre.Exec(s1...)
+
 	*t.OutputString = "Created Successfully"
 	return nil
 }
