@@ -107,7 +107,8 @@ func (info RouteInfo) PathHandler(c echo.Context) error {
 	case "getAll":
 		err = t.GetAll()
 	case "create":
-		tmp := Validate(&input, table[info.Source])
+		var tmp []ErrorMessage
+		tmp, input = Validate(input, table[info.Source])
 		log.Print(tmp)
 		err = t.Create()
 	case "update":
@@ -191,9 +192,9 @@ func IsBolean(x interface{}) (bool, bool) {
 		return false, false
 	}
 }
-func Validate(input *map[string]interface{}, instruct InnerMap) []ErrorMessage {
+func Validate(input map[string]interface{}, instruct InnerMap) ([]ErrorMessage, map[string]interface{}) {
 	errList := []ErrorMessage{}
-	for k, v := range *input {
+	for k, v := range input {
 		ok := true
 
 		switch instruct[k] {
@@ -203,7 +204,8 @@ func Validate(input *map[string]interface{}, instruct InnerMap) []ErrorMessage {
 				if _, t := v.(string); t {
 
 					if x, err := strconv.ParseFloat(v.(string), 64); err == nil {
-						(*input)[k] = x
+						//(*input)[k] = x
+						input[k] = x
 						ok = true
 
 					}
@@ -216,15 +218,18 @@ func Validate(input *map[string]interface{}, instruct InnerMap) []ErrorMessage {
 			layout := "2006-01-02T15:04:05.000Z"
 			if _, t := v.(string); t {
 				if x, err := time.Parse(layout, v.(string)); err == nil {
-					(*input)[k] = x
+					//(*input)[k] = x
+					input[k] = x
+					ok = true
 				}
 			}
 
 		case "boolean":
-			result := true
-			ok, result = IsBolean(v)
+			x := true
+			ok, x = IsBolean(v)
 			if ok {
-				(*input)[k] = result
+				//(*input)[k] = result
+				input[k] = x
 			}
 		case "email":
 			ok = valid.IsEmail(v.(string))
@@ -235,12 +240,21 @@ func Validate(input *map[string]interface{}, instruct InnerMap) []ErrorMessage {
 
 		default:
 			if instruct[k][:2] == "[]" {
+				tmpMap2 := []map[string]interface{}{}
 				x, _ := v.([]interface{})
 				for i := range x {
-					errList = append(errList, (Validate(x[i].(*map[string]interface{}), table[instruct[k][2:]]))...)
+
+					returnErr, returnMap := Validate(x[i].(map[string]interface{}), table[instruct[k][2:]])
+					tmpMap2 = append(tmpMap2, returnMap)
+					errList = append(errList, returnErr...)
 				}
+				input[k] = tmpMap2
+
 			} else {
-				errList = append(errList, (Validate(v.(*map[string]interface{}), table[instruct[k]]))...)
+
+				returnErr, returnMap := Validate(v.(map[string]interface{}), table[instruct[k]])
+				input[k] = returnMap
+				errList = append(errList, returnErr...)
 			}
 		}
 		if !ok {
@@ -255,7 +269,8 @@ func Validate(input *map[string]interface{}, instruct InnerMap) []ErrorMessage {
 			})
 		}
 	}
-	return errList
+
+	return errList, input
 }
 
 type OuterMap map[string]map[string]string
