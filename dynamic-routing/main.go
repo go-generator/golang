@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	valid "github.com/asaskevich/govalidator"
 	"github.com/common-go/mongo"
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo"
 	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/bson"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -102,31 +104,17 @@ func IntValidate(k string, valueString string, v *int64, errList *[]ErrorMessage
 	}
 	return nil
 }
-func Validator(source string, mo ModelJSONList, input map[string]interface{}) []ErrorMessage {
-	var errList []ErrorMessage
-	t := -1
-	for i := range mo {
-		if mo[i].Name == source {
-			t = i
-			break
-		}
-	}
-	if t == -1 {
-		return []ErrorMessage{{
-			Field:   "",
-			Code:    "",
-			Message: "Table Not Found",
-		}}
-	}
+func Validator(mo ModelJSON, input map[string]interface{}) []ErrorMessage {
 
+	errList := []ErrorMessage{}
 	for k, v := range input {
 		valueString, ok := v.(string)
 		contain := false
 		if ok {
-			for i := range mo[t].Fields {
-				if k == mo[t].Fields[i].Source {
+			for i := range mo.Fields {
+				if k == mo.Fields[i].Source {
 					contain = true
-					switch mo[t].Fields[i].Type {
+					switch mo.Fields[i].Type {
 					case "time.Time":
 						var tmp time.Time
 						err := DateTimeValidate(k, valueString, &tmp, &errList)
@@ -188,10 +176,10 @@ func (info RouteInfo) PathHandler(c echo.Context) error {
 	case "getAll":
 		err = t.GetAll()
 	case "create":
-		_ = Validator(info.Source, m, input)
+		//_ = Validator(info.Source, m, input)
 		err = t.Create()
 	case "update":
-		_ = Validator(info.Source, m, input)
+		//_ = Validator(info.Source, m, input)
 		err = t.Update()
 	case "delete":
 		err = t.Delete()
@@ -230,7 +218,8 @@ func ReadRouteFromMongo(r *RouteList) error {
 
 	return err
 }
-func ReadSchemaFromMongo(r *ModelJSONList) error {
+func ReadSchemaFromMongo() error {
+	var r ModelJSONList
 	ctx := context.Background()
 	db, err := mongo.CreateConnection(ctx, "mongodb://localhost:27017", "evaluation")
 	if err != nil {
@@ -247,7 +236,13 @@ func ReadSchemaFromMongo(r *ModelJSONList) error {
 		if err != nil {
 			return err
 		}
-		*r = append(*r, r2)
+		r = append(r, r2)
+	}
+	for i := range r {
+		table[r[i].Name] = InnerMap{}
+		for j := range r[i].Fields {
+			table[r[i].Name][r[i].Fields[j].Source] = r[i].Fields[j].Type
+		}
 	}
 
 	return err
@@ -255,12 +250,93 @@ func ReadSchemaFromMongo(r *ModelJSONList) error {
 
 var m ModelJSONList
 
+func IsBolean(x interface{}) bool {
+	switch x {
+	case "true", "false", true, false:
+		return true
+	default:
+		return false
+	}
+}
+func Validate(input CustomMap, instruct InnerMap) []ErrorMessage {
+	errList := []ErrorMessage{}
+	for k, v := range input {
+		ok := true
+
+		switch instruct[k] {
+		case "int":
+			ok = valid.IsInt(v.(string))
+		case "string":
+			continue
+		case "time.Time":
+			ok = valid.IsTime(v.(string), "2006-01-02T15:04:05.000Z")
+		case "boolean":
+			ok = IsBolean(v)
+		case "email":
+			ok = valid.IsEmail(v.(string))
+		case "url":
+			ok = valid.IsURL(v.(string))
+		case "":
+			ok = false
+
+		default:
+			if instruct[k][:2] == "[]" {
+				x, _ := v.([]CustomMap)
+				for i := range x {
+					errList = append(errList, (Validate(x[i], table[instruct[k][2:]]))...)
+				}
+			} else {
+				errList = append(errList, (Validate(v.(CustomMap), table[instruct[k]]))...)
+			}
+		}
+		if !ok {
+			mess := "Wrong format: " + k + " must be " + instruct[k]
+			if instruct[k] == "" {
+				mess = "Non-existed field: " + k
+			}
+			errList = append(errList, ErrorMessage{
+				Field:   k,
+				Code:    "",
+				Message: mess,
+			})
+		}
+	}
+	return errList
+}
+
+type OuterMap map[string]map[string]string
+type InnerMap map[string]string
+type CustomMap map[string]interface{}
+
+var table = OuterMap{}
+
 func main() {
+	table = OuterMap{}
+
+	table = OuterMap{
+		"student":  InnerMap{},
+		"hometown": InnerMap{},
+	}
+	table["student"] = InnerMap{
+		"custom": "[]hometown",
+	}
+	table["hometown"] = InnerMap{
+		"place": "int",
+	}
+
+	input := CustomMap{
+		"custom1": []CustomMap{
+			{"place": "a"}, {"place": "b"},
+		},
+	}
+
+	tmp := Validate(input, table["student"])
+	log.Print(tmp)
 
 	e := echo.New()
 	var r2 RouteList
 
-	_ = ReadSchemaFromMongo(&m)
+	_ = ReadSchemaFromMongo()
 	_ = ReadRouteFromMongo(&r2)
 	AddRoute(r2, e)
 
