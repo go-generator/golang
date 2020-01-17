@@ -47,7 +47,7 @@ type ErrorMessage struct {
 	Code    string `json:"code,omitempty" bson:"code,omitempty" gorm:"column:code"`
 	Message string `json:"message,omitempty" bson:"message,omitempty" gorm:"column:message"`
 }
-type ModelJSONList []ModelJSON
+
 type ModelJSON struct {
 	Env        string          `json:"env"`
 	Name       string          `json:"name"`
@@ -74,81 +74,12 @@ type FieldElements struct {
 	PrimaryKey bool   `json:"primaryKey"`
 }
 
-func DateTimeValidate(fieldName string, valueString string, v *time.Time, errList *[]ErrorMessage) error {
-	layout := "2006-01-02T15:04:05.000Z"
-	time2, err := time.Parse(layout, valueString)
-	if err != nil {
-		*errList = append(*errList, ErrorMessage{
-			Field:   fieldName,
-			Code:    "",
-			Message: "Field " + fieldName + ": Invalid Date Time Format",
-		})
-		return err
-	}
-	*v = time2
-	return nil
-}
-
-func IntValidate(k string, valueString string, v *int64, errList *[]ErrorMessage) error {
-	x, err := strconv.ParseInt(valueString, 0, 64)
-	if err != nil {
-
-		*errList = append(*errList, ErrorMessage{
-			Field:   k,
-			Code:    "",
-			Message: "Field " + k + ": Invalid Integer Format",
-		})
-		return err
-	} else {
-		*v = x
-	}
-	return nil
-}
-func Validator(mo ModelJSON, input map[string]interface{}) []ErrorMessage {
-
-	errList := []ErrorMessage{}
-	for k, v := range input {
-		valueString, ok := v.(string)
-		contain := false
-		if ok {
-			for i := range mo.Fields {
-				if k == mo.Fields[i].Source {
-					contain = true
-					switch mo.Fields[i].Type {
-					case "time.Time":
-						var tmp time.Time
-						err := DateTimeValidate(k, valueString, &tmp, &errList)
-						if err == nil {
-							(input)[k] = tmp
-						}
-					case "int":
-						var tmp int64
-						err := IntValidate(k, valueString, &tmp, &errList)
-						if err == nil {
-							(input)[k] = tmp
-						}
-					}
-					break
-
-				}
-			}
-
-			if !contain {
-				errList = append(errList, ErrorMessage{
-					Field:   "",
-					Code:    "",
-					Message: "Field " + k + " Not Existed",
-				})
-			}
-		}
-	}
-	return errList
-}
+var input = map[string]interface{}{}
 
 func (info RouteInfo) PathHandler(c echo.Context) error {
 
 	var output string
-	input := map[string]interface{}{}
+
 	err := c.Bind(&input)
 	if err != nil {
 		return err
@@ -176,7 +107,8 @@ func (info RouteInfo) PathHandler(c echo.Context) error {
 	case "getAll":
 		err = t.GetAll()
 	case "create":
-		//_ = Validator(info.Source, m, input)
+		tmp := Validate(&input, table[info.Source])
+		log.Print(tmp)
 		err = t.Create()
 	case "update":
 		//_ = Validator(info.Source, m, input)
@@ -202,7 +134,7 @@ func ReadRouteFromMongo(r *RouteList) error {
 	if err != nil {
 		return err
 	}
-	collection := db.Collection("sqlServerRoute")
+	collection := db.Collection("route")
 	result, err := collection.Find(ctx, bson.D{})
 	if err != nil {
 		return err
@@ -219,7 +151,7 @@ func ReadRouteFromMongo(r *RouteList) error {
 	return err
 }
 func ReadSchemaFromMongo() error {
-	var r ModelJSONList
+
 	ctx := context.Background()
 	db, err := mongo.CreateConnection(ctx, "mongodb://localhost:27017", "evaluation")
 	if err != nil {
@@ -230,13 +162,14 @@ func ReadSchemaFromMongo() error {
 	if err != nil {
 		return err
 	}
-	var r2 ModelJSON
+	r := []ModelJSON{}
 	for result.Next(ctx) {
-		err = result.Decode(&r2)
+		ri := ModelJSON{}
+		err = result.Decode(&ri)
 		if err != nil {
 			return err
 		}
-		r = append(r, r2)
+		r = append(r, ri)
 	}
 	for i := range r {
 		table[r[i].Name] = InnerMap{}
@@ -248,30 +181,51 @@ func ReadSchemaFromMongo() error {
 	return err
 }
 
-var m ModelJSONList
-
-func IsBolean(x interface{}) bool {
+func IsBolean(x interface{}) (bool, bool) {
 	switch x {
-	case "true", "false", true, false:
-		return true
+	case true, "true", "True":
+		return true, true
+	case false, "false", "False":
+		return true, false
 	default:
-		return false
+		return false, false
 	}
 }
-func Validate(input CustomMap, instruct InnerMap) []ErrorMessage {
+func Validate(input *map[string]interface{}, instruct InnerMap) []ErrorMessage {
 	errList := []ErrorMessage{}
-	for k, v := range input {
+	for k, v := range *input {
 		ok := true
 
 		switch instruct[k] {
 		case "int":
-			ok = valid.IsInt(v.(string))
+			_, ok = v.(float64)
+			if !ok {
+				if _, t := v.(string); t {
+
+					if x, err := strconv.ParseFloat(v.(string), 64); err == nil {
+						(*input)[k] = x
+						ok = true
+
+					}
+				}
+			}
 		case "string":
 			continue
 		case "time.Time":
-			ok = valid.IsTime(v.(string), "2006-01-02T15:04:05.000Z")
+			ok = false
+			layout := "2006-01-02T15:04:05.000Z"
+			if _, t := v.(string); t {
+				if x, err := time.Parse(layout, v.(string)); err == nil {
+					(*input)[k] = x
+				}
+			}
+
 		case "boolean":
-			ok = IsBolean(v)
+			result := true
+			ok, result = IsBolean(v)
+			if ok {
+				(*input)[k] = result
+			}
 		case "email":
 			ok = valid.IsEmail(v.(string))
 		case "url":
@@ -281,12 +235,12 @@ func Validate(input CustomMap, instruct InnerMap) []ErrorMessage {
 
 		default:
 			if instruct[k][:2] == "[]" {
-				x, _ := v.([]CustomMap)
+				x, _ := v.([]interface{})
 				for i := range x {
-					errList = append(errList, (Validate(x[i], table[instruct[k][2:]]))...)
+					errList = append(errList, (Validate(x[i].(*map[string]interface{}), table[instruct[k][2:]]))...)
 				}
 			} else {
-				errList = append(errList, (Validate(v.(CustomMap), table[instruct[k]]))...)
+				errList = append(errList, (Validate(v.(*map[string]interface{}), table[instruct[k]]))...)
 			}
 		}
 		if !ok {
@@ -306,32 +260,29 @@ func Validate(input CustomMap, instruct InnerMap) []ErrorMessage {
 
 type OuterMap map[string]map[string]string
 type InnerMap map[string]string
-type CustomMap map[string]interface{}
 
 var table = OuterMap{}
 
 func main() {
-	table = OuterMap{}
-
-	table = OuterMap{
-		"student":  InnerMap{},
-		"hometown": InnerMap{},
-	}
-	table["student"] = InnerMap{
-		"custom": "[]hometown",
-	}
-	table["hometown"] = InnerMap{
-		"place": "int",
-	}
-
-	input := CustomMap{
-		"custom1": []CustomMap{
-			{"place": "a"}, {"place": "b"},
-		},
-	}
-
-	tmp := Validate(input, table["student"])
-	log.Print(tmp)
+	//table = OuterMap{
+	//	"student":  InnerMap{},
+	//	"hometown": InnerMap{},
+	//}
+	//table["student"] = InnerMap{
+	//	"custom": "[]hometown",
+	//}
+	//table["hometown"] = InnerMap{
+	//	"place": "int",
+	//}
+	//
+	//input := map[string]interface{}{
+	//	"custom1": []map[string]interface{}{
+	//		{"place": "a"}, {"place": "b"},
+	//	},
+	//}
+	//
+	//tmp := Validate(input, table["student"])
+	//log.Print(tmp)
 
 	e := echo.New()
 	var r2 RouteList
