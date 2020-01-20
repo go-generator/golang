@@ -2,7 +2,6 @@ package screens
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"../code_generate_core"
@@ -95,16 +94,16 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	largeText2 := widget.NewMultiLineEntry()
 	largeText2.SetPlaceHolder("Output")
 	cursorRow := widget.NewLabel("")
-	largeText2.OnChanged = func(s string) {
-		log.Println(s)
-		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &s)
-		if err == "" {
-			largeText2.SetText(s)
-			cursorRow.SetText("OK")
-		} else {
-			cursorRow.SetText(err)
-		}
-	}
+	//largeText2.OnChanged = func(s string) {
+	//	log.Println(s)
+	//	err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &s)
+	//	if err == "" {
+	//		largeText2.SetText(s)
+	//		cursorRow.SetText("OK")
+	//	} else {
+	//		cursorRow.SetText(err)
+	//	}
+	//}
 	okButton := widget.NewButton("Code Generate", func() {
 		result := ""
 		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &result)
