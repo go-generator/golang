@@ -1,0 +1,6 @@
+dialect: mysql
+host: localhost
+port: 3306
+database: classicmodels
+user: test
+password: !!binary WztKq3WWfE0iCHA00h4aByCzsJoP/R3suE9cGzNVXfRxxeMW

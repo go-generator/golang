@@ -4,6 +4,7 @@ package main
 import (
 	"net/url"
 
+	. "./cache_file"
 	"./data"
 	"./screens"
 	"fyne.io/fyne"
@@ -14,7 +15,9 @@ import (
 	"fyne.io/fyne/widget"
 )
 
-const preferenceCurrentTab = "currentTab"
+const (
+	preferenceCurrentTab = "currentTab"
+)
 
 func welcomeScreen(a fyne.App) fyne.CanvasObject {
 	logo := canvas.NewImageFromResource(data.FyneScene)
@@ -47,9 +50,12 @@ func welcomeScreen(a fyne.App) fyne.CanvasObject {
 
 func main() {
 	a := app.NewWithID("io.fyne.demo")
+	a.Settings().SetTheme(theme.LightTheme())
 	a.SetIcon(theme.FyneLogo())
-
 	w := a.NewWindow("Code Generator")
+	w.Resize(fyne.Size{
+		Width: 640,
+	})
 	//w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("File",
 	//	fyne.NewMenuItem("New", func() { fmt.Println("Menu New") }),
 	//	// a quit item will be appended to our first menu
@@ -59,7 +65,6 @@ func main() {
 	//	fyne.NewMenuItem("Paste", func() { fmt.Println("Menu Paste") }),
 	//)))
 	w.SetMaster()
-
 	//tabs := widget.NewTabContainer(
 	//
 	//	widget.NewTabItemWithIcon("Widgets", theme.ContentCopyIcon(), screens.WidgetScreen()),
@@ -67,8 +72,7 @@ func main() {
 	//
 	//tabs.SetTabLocation(widget.TabLocationLeading)
 	//tabs.SelectTabIndex(a.Preferences().Int(preferenceCurrentTab))
-	w.SetContent(screens.WidgetScreen())
-
+	w.SetContent(screens.WidgetScreen(a, AbsPath))
 	w.ShowAndRun()
 	//a.Preferences().SetInt(preferenceCurrentTab, tabs.CurrentTabIndex())
 }

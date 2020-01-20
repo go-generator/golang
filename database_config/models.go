@@ -26,8 +26,14 @@ type DatabaseConfig struct {
 }
 
 type FilesDetails struct {
-	Env   string      `json:"env"`
-	Files []ModelJSON `json:"files"`
+	Env    []string    `json:"env"`
+	Entity []string    `json:"entity"`
+	Model  string      `json:"model"`
+	Files  []ModelJSON `json:"files"`
+}
+
+type Folders struct {
+	ModelFile []FilesDetails `json:"folders"`
 }
 
 type ModelJSON struct {
@@ -180,9 +186,9 @@ func (s *SqlTablesData) InitTypeMap() {
 	}
 }
 
-func (s *SqlTablesData) InitSqlTable(tableName string, conn *gorm.DB) {
+func (s *SqlTablesData) InitSqlTable(database string, tableName string, conn *gorm.DB) {
 	s.StructName = strings.Title(StandardizeName(tableName))
-	conn.Table("information_schema.columns").Select("*").Where("TABLE_NAME = '" + tableName + "'").Scan(&s.SqlTable)
+	conn.Table("information_schema.columns").Select("*").Where("TABLE_SCHEMA= '" + database + "' AND TABLE_NAME = '" + tableName + "'").Scan(&s.SqlTable)
 }
 
 func (s *SqlTablesData) FreeResources() {
@@ -205,23 +211,23 @@ func (s *SqlTablesData) WritePackage(packageName string) string {
 
 func (s *SqlTablesData) WriteStruct() {
 	s.WriteFile.WriteString("type " + s.StructName + " struct {\n")
-	if !s.ContainCompositeKey { // Only one Primary key
-		for i, v := range s.GoFields {
-			if s.SqlTable[i].ColumnKey == "PRI" {
-				s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag("_id") + AddGORMTag(s.SqlTable[i].ColumnName, true))
-				continue
-			}
-			s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag(ToLower(v)) + AddGORMTag(s.SqlTable[i].ColumnName, false))
+	//if !s.ContainCompositeKey { // Only one Primary key
+	//	for i, v := range s.GoFields {
+	//		if s.SqlTable[i].ColumnKey == "PRI" {
+	//			s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag("_id") + AddGORMTag(s.SqlTable[i].ColumnName, true))
+	//			continue
+	//		}
+	//		s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag(ToLower(v)) + AddGORMTag(s.SqlTable[i].ColumnName, false))
+	//	}
+	//} else { // Composite key
+	for i, v := range s.GoFields {
+		if s.SqlTable[i].ColumnKey == "PRI" {
+			s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag(ToLower(v)) + AddGORMTag(s.SqlTable[i].ColumnName, true))
+			continue
 		}
-	} else { // Composite key
-		for i, v := range s.GoFields {
-			if s.SqlTable[i].ColumnKey == "PRI" {
-				s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag(ToLower(v)) + AddGORMTag(s.SqlTable[i].ColumnName, true))
-				continue
-			}
-			s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag(ToLower(v)) + AddGORMTag(s.SqlTable[i].ColumnName, false))
-		}
+		s.WriteFile.WriteString("\t" + AddStructFieldName(v) + "\t" + s.TypeMap.TypeConvert[s.SqlTable[i].DataType] + "\t" + AddJSONTag(ToLower(v)) + AddBSONTag(ToLower(v)) + AddGORMTag(s.SqlTable[i].ColumnName, false))
 	}
+	//}
 	s.WriteFile.WriteString("}")
 }
 

@@ -9,11 +9,10 @@ import (
 	"strings"
 
 	. "../database_config"
+	. "../yaml_cache/cache_yaml"
 	. "./constants"
 	. "./database_models"
 	"fyne.io/fyne"
-	fApp "fyne.io/fyne/app"
-	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -40,12 +39,15 @@ func DatabaseRelationships(dbConfig DatabaseConfig, conn *gorm.DB) ([]Relationsh
 func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseConfig, rt []RelationshipTables) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
 	var s SqlTablesData
 	var files FilesDetails
+	files.Env = []string{"search_model", "config", "controller", "service/impl", "route", "service"}
+	var folderOutput Folders
+	var entity []string
 	if env == "" {
-		env = "database_description"
+		env = "model"
 	}
 	tables := ListAllTableNames(conn, dc.Database)
 	defer s.FreeResources() // Close connection before freeing resources
-	files.Env = env
+	files.Model = env
 	s.InitSqlTablesData()
 	path := "./" + output + "/"
 	fileDirectory := path + output + ".json"
@@ -58,30 +60,30 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 	for _, v := range tables {
 		var m ModelJSON
 		m.Name = v
-		s.InitSqlTable(v, conn)
+		s.InitSqlTable(dc.Database, v, conn)
 		s.StandardizeFieldsName()
-		for i, v := range s.SqlTable {
+		for i, k := range s.SqlTable {
 			var f FieldElements
 			if s.ContainCompositeKey {
 				f.Source = ToLower(s.GoFields[i])
 			} else {
-				if v.ColumnKey == "PRI" {
+				if k.ColumnKey == "PRI" {
 					f.Source = "_id"
 				} else {
 					f.Source = ToLower(s.GoFields[i])
 				}
 			}
-			f.Type = s.TypeMap.TypeConvert[v.DataType]
+			f.Type = s.TypeMap.TypeConvert[k.DataType]
 			f.Name = s.GoFields[i]
-			if v.ColumnKey == "PRI" {
+			if k.ColumnKey == "PRI" {
 				f.PrimaryKey = true
 			} else {
 				f.PrimaryKey = false
 			}
-			rl := GetRelationship(v.ColumnName, rt)
+			rl := GetRelationship(k.ColumnName, rt)
 			if rl != nil {
 				var foreign FieldElements
-				if rl.Relationship == MTO && v.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
+				if rl.Relationship == MTO && k.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
@@ -97,7 +99,12 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 		files.Files = append(files.Files, m)
 		s.ResetData() // Reuse Variable
 	}
-	data, err := json.MarshalIndent(&files, "", " ")
+	for _, v := range files.Files {
+		entity = append(entity, StandardizeName(v.Name))
+	}
+	files.Entity = entity
+	folderOutput.ModelFile = append(folderOutput.ModelFile, files)
+	data, err := json.MarshalIndent(&folderOutput, "", " ")
 	if err != nil {
 		return err
 	}
@@ -112,6 +119,9 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 	var s SqlTablesData
 	var err error
 	var files FilesDetails
+	files.Env = []string{"search_model", "config", "controller", "service/impl", "route", "service"}
+	var output Folders
+	var entity []string
 	tables := ListAllTableNames(conn, dc.Database)
 	defer s.FreeResources() // Close connection before freeing resources
 	defer func() {
@@ -121,11 +131,11 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 		}
 	}()
 	s.InitSqlTablesData()
-	files.Env = env
+	files.Model = env
 	for _, v := range tables {
 		var m ModelJSON
 		m.Name = v
-		s.InitSqlTable(v, conn)
+		s.InitSqlTable(dc.Database, v, conn)
 		s.StandardizeFieldsName()
 		for i, v := range s.SqlTable {
 			var f FieldElements
@@ -164,7 +174,12 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 		files.Files = append(files.Files, m)
 		s.ResetData() // Reuse Variable
 	}
-	data, err := json.MarshalIndent(&files, "", " ")
+	for _, v := range files.Files {
+		entity = append(entity, StandardizeName(v.Name))
+	}
+	files.Entity = entity
+	output.ModelFile = append(output.ModelFile, files)
+	data, err := json.MarshalIndent(&output, "", " ")
 	if err != nil {
 		return err
 	}
@@ -215,31 +230,66 @@ func InputValidation(app fyne.App, dc *DatabaseConfig, conn *gorm.DB) {
 	ShowWindows(app, "Success", "Generated Database Json Description Successfully")
 }
 
-func InputUI(dc *DatabaseConfig) fyne.Window {
-	app := fApp.New()
-	app.Settings().SetTheme(theme.LightTheme())
-	w := app.NewWindow("Database Json Generator")
-	w.Resize(fyne.Size{
+func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.Window {
+	var temp DatabaseConfig
+	err := ReadCacheFile(cache, &temp, encryptField)
+	if err != nil {
+		log.Println(err)
+	}
+	window := app.NewWindow("Database Json Generator")
+	window.Resize(fyne.Size{
 		Width: 640,
 	})
 	dialectEntry := widget.NewEntry()
 	dialectEntry.OnChanged = dc.SetDialect
+	dialectEntry.Text = dc.Dialect
 	usernameEntry := widget.NewEntry()
 	usernameEntry.OnChanged = dc.SetUsername
+	usernameEntry.Text = dc.User
 	passwordEntry := widget.NewEntry()
 	passwordEntry.OnChanged = dc.SetPassword
+	passwordEntry.Text = dc.Password
 	passwordEntry.Password = true
 	hostEntry := widget.NewEntry()
 	hostEntry.OnChanged = dc.SetHost
+	hostEntry.Text = dc.Host
 	portEntry := widget.NewEntry()
 	portEntry.OnChanged = dc.SetPort
+	portEntry.Text = strconv.Itoa(dc.Port)
 	databaseEntry := widget.NewEntry()
 	databaseEntry.OnChanged = dc.SetDatabaseName
-	w.SetContent(widget.NewVBox(
+	databaseEntry.Text = dc.Database
+	executeButton := widget.NewButton("Generate Database Json Description", func() {
+		conn, err := dc.ConnectToSqlServer()
+		if err != nil {
+			log.Println(err)
+		}
+		defer func() {
+			err = conn.Close()
+			if err != nil {
+				log.Println(err)
+			}
+		}()
+		InputValidation(app, dc, conn)
+		if temp != *dc {
+			err := WriteCacheFile(cache, dc, encryptField)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	})
+	window.SetContent(widget.NewVBox(
 		widget.NewLabel("Dialect:"),
 		dialectEntry,
 		widget.NewLabel("User:"),
 		usernameEntry,
+		widget.NewCheck("Show Password", func(b bool) {
+			if b {
+				passwordEntry.Password = false
+			} else {
+				passwordEntry.Password = true
+			}
+		}),
 		widget.NewLabel("Password:"),
 		passwordEntry,
 		widget.NewLabel("Host:"),
@@ -248,22 +298,11 @@ func InputUI(dc *DatabaseConfig) fyne.Window {
 		portEntry,
 		widget.NewLabel("Database:"),
 		databaseEntry,
-		widget.NewButton("Generate Database Json Description", func() {
-			conn, err := dc.ConnectToSqlServer()
-			if err != nil {
-				log.Println(err)
-			}
-			defer func() {
-				err = conn.Close()
-				if err != nil {
-					log.Println(err)
-				}
-			}()
-			InputValidation(app, dc, conn)
-		}),
+		executeButton,
 		widget.NewButton("Quit", func() {
-			app.Quit()
+			window.Close()
 		}),
 	))
-	return w
+	window.CenterOnScreen()
+	return window
 }

@@ -2,9 +2,12 @@ package screens
 
 import (
 	"fmt"
-	"github.com/sqweek/dialog"
-	"golang/code-generate-gui/code-generate-core"
+	"log"
 	"time"
+
+	"../code_generate_core"
+	"../model_file_generator"
+	"github.com/sqweek/dialog"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/canvas"
@@ -71,7 +74,8 @@ func makeProgressTab() fyne.Widget {
 		widget.NewLabel("Infinite"), infProgress)
 }
 
-func makeFormTab() fyne.CanvasObject {
+func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
+	var modifiedFilename string
 	projectName := widget.NewEntry()
 	projectName.SetPlaceHolder("Project Name")
 	templateDir := widget.NewEntry()
@@ -91,9 +95,19 @@ func makeFormTab() fyne.CanvasObject {
 	largeText2 := widget.NewMultiLineEntry()
 	largeText2.SetPlaceHolder("Output")
 	cursorRow := widget.NewLabel("")
+	largeText2.OnChanged = func(s string) {
+		log.Println(s)
+		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &s)
+		if err == "" {
+			largeText2.SetText(s)
+			cursorRow.SetText("OK")
+		} else {
+			cursorRow.SetText(err)
+		}
+	}
 	okButton := widget.NewButton("Code Generate", func() {
 		result := ""
-		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText.Text, &result)
+		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &result)
 		if err == "" {
 			largeText2.SetText(result)
 			cursorRow.SetText("OK")
@@ -102,7 +116,7 @@ func makeFormTab() fyne.CanvasObject {
 		}
 	})
 	openFileButton := widget.NewButton("Code Generate From File...", func() {
-		filename, err := dialog.File().Filter("JSON/Text file", "*").Load()
+		filename, err := dialog.File().Filter("JSON/Text file", "json", "txt").Load()
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {
@@ -115,7 +129,7 @@ func makeFormTab() fyne.CanvasObject {
 				cursorRow.SetText(err)
 			}
 		}
-
+		modifiedFilename = filename
 	})
 
 	saveButton := widget.NewButton("Save Files (to main.go folder or input.json folder)", func() {
@@ -161,6 +175,12 @@ func makeFormTab() fyne.CanvasObject {
 			}
 		}
 	})
+	modelJsonGenerator := widget.NewButton("Connect to database and generate json description", func() {
+		wi, err := model_file_generator.RunWithUI(app, cachePath)
+		if err == nil {
+			wi.Show()
+		}
+	})
 	list := widget.NewVBox()
 	list2 := widget.NewVBox()
 	list.Append(templateBar)
@@ -173,10 +193,10 @@ func makeFormTab() fyne.CanvasObject {
 	list2.Append(projectName)
 	list2.Append(largeText)
 	list2.Append(largeText2)
+	list.Append(modelJsonGenerator)
 	statusBar := widget.NewHBox(layout.NewSpacer(),
 		widget.NewLabel("Status:"), cursorRow,
 	)
-
 	list.Append(statusBar)
 
 	//	OnCancel: func() {
@@ -239,7 +259,7 @@ func makeScrollBothTab() fyne.CanvasObject {
 }
 
 // WidgetScreen shows a panel containing widget demos
-func WidgetScreen() fyne.CanvasObject {
+func WidgetScreen(app fyne.App, cachePath string) fyne.CanvasObject {
 	//toolbar := widget.NewToolbar(widget.NewToolbarAction(theme.MailComposeIcon(), func() { fmt.Println("New") }),
 	//	widget.NewToolbarSeparator(),
 	//	widget.NewToolbarSpacer(),
@@ -258,5 +278,5 @@ func WidgetScreen() fyne.CanvasObject {
 	//		//widget.NewTabItem("Full Scroll", makeScrollBothTab()),
 	//	),
 	//)
-	return makeFormTab()
+	return makeFormTab(app, cachePath)
 }
