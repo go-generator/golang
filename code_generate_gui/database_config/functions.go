@@ -4,6 +4,8 @@ import (
 	"strings"
 	"unicode"
 
+	"fyne.io/fyne"
+	"fyne.io/fyne/widget"
 	"github.com/jinzhu/gorm"
 )
 
@@ -49,4 +51,15 @@ func StandardizeName(s string) string {
 		field.WriteString(strings.Title(t))
 	}
 	return field.String()
+}
+
+func ShowWindows(app fyne.App, title, message string) {
+	wa := app.NewWindow(title)
+	wa.Resize(fyne.Size{
+		Width: 320,
+	})
+	wa.SetContent(widget.NewVBox(
+		widget.NewLabel(message),
+	))
+	wa.Show()
 }
