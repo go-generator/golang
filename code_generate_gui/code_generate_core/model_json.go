@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -88,6 +89,20 @@ func AddGORMTag(name string, primaryTag bool) string {
 	return " gorm:\"column:" + name + "\"`\n"
 }
 
+func StandardizeStructName(s string) string {
+	var res strings.Builder
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		log.Println(err)
+	}
+	tokens := strings.Split(s, "_")
+	for _, v := range tokens {
+		alphanumericString := reg.ReplaceAllString(v, "")
+		res.WriteString(strings.Title(alphanumericString))
+	}
+	return res.String()
+}
+
 func (m *ModelJSON) WritePackage(packageName string) {
 	m.WriteFile.WriteString("package " + packageName + "\n\n")
 	for _, v := range m.Fields {
@@ -105,6 +120,9 @@ func (m *ModelJSON) WriteTypeAlias() {
 }
 
 func (m *ModelJSON) WriteConstValue() {
+	if len(m.ConstValue) == 0 {
+		return
+	}
 	m.WriteFile.WriteString("const (\n")
 	for _, v := range m.ConstValue {
 		switch v.Value.(type) {
@@ -124,7 +142,7 @@ func (m *ModelJSON) WriteStruct() {
 			count++
 		}
 	}
-	m.WriteFile.WriteString("type " + m.Name + " struct {\n")
+	m.WriteFile.WriteString("type " + StandardizeStructName(m.Name) + " struct {\n")
 	if count < 2 {
 		for _, v := range m.Fields {
 			if v.PrimaryKey {

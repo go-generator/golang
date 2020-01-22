@@ -1,9 +1,13 @@
-package database_config
+package db_config
 
 import (
+	"log"
+	"regexp"
 	"strings"
 	"unicode"
 
+	"fyne.io/fyne"
+	"fyne.io/fyne/widget"
 	"github.com/jinzhu/gorm"
 )
 
@@ -44,9 +48,25 @@ func ListAllTableNames(conn *gorm.DB, databaseName string) []string {
 
 func StandardizeName(s string) string {
 	var field strings.Builder
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		log.Println(err)
+	}
 	tokens := strings.Split(s, "_")
 	for _, t := range tokens {
-		field.WriteString(strings.Title(t))
+		alphanumericString := reg.ReplaceAllString(t, "")
+		field.WriteString(strings.Title(alphanumericString))
 	}
 	return field.String()
+}
+
+func ShowWindows(app fyne.App, title, message string) {
+	wa := app.NewWindow(title)
+	wa.Resize(fyne.Size{
+		Width: 320,
+	})
+	wa.SetContent(widget.NewVBox(
+		widget.NewLabel(message),
+	))
+	wa.Show()
 }

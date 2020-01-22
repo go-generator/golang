@@ -6,16 +6,28 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 const (
-	defaultFileName       = "input.json"
-	defaultRootPath       = ""
-	defaultProjectName    = "evaluation"
-	defaultTemplateFolder = "code-generate-core/template"
+	defaultFileName                   = "input.json"
+	defaultRootPath                   = ""
+	defaultProjectName                = "evaluation"
+	defaultTemplateFolderRelativePath = "./code_generate_core/template"
 )
+
+var defaultTemplateFolder = absTemplatePath()
+
+func absTemplatePath() string {
+	absPath, err := filepath.Abs(defaultTemplateFolderRelativePath)
+	if err != nil {
+		log.Println(err)
+	}
+	return absPath
+}
 
 type Input struct {
 	Folders []Folder `json:"folders"`
@@ -64,7 +76,6 @@ func InputFileToInputStruct(filename string) string {
 	return ""
 }
 func InputStringToInputStruct(guiInput string) string {
-
 	err := json.Unmarshal([]byte(guiInput), &input)
 	if err != nil {
 		return err.Error()
@@ -78,12 +89,12 @@ func InputStructToOutputString(result *string) string {
 	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
 	for k := range input.Folders {
 		for i := range input.Folders[k].RawEnv {
-			//Convert RawEnv to Env
+			//Convert RawEnv to Model
 			tmp := strings.LastIndex(input.Folders[k].RawEnv[i], "/")
 			input.Folders[k].Env = append(input.Folders[k].Env, input.Folders[k].RawEnv[i][tmp+1:])
 
 			//READ THE TEMPLATE FILES
-			content, err := ioutil.ReadFile(defaultTemplateFolder + "/" + input.Folders[k].Env[i] + ".txt")
+			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + input.Folders[k].Env[i] + ".txt")
 			if err != nil {
 				return err.Error()
 			}
@@ -104,7 +115,7 @@ func InputStructToOutputString(result *string) string {
 					text = tmpText + text[end+len("{end}"):]
 
 					for j := range input.Folders[k].Entity {
-						//text = strings.Replace(text, "{env}", input.Folders[k].Env[i], envCount)
+						//text = strings.Replace(text, "{env}", input.ModelFile[k].Model[i], envCount)
 						text = strings.Replace(text, "{entity}", input.Folders[k].Entity[j], entityCount)
 						text = strings.Replace(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:], entityLowerFirstCharacterCount)
 					}
