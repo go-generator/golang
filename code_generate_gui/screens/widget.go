@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"../code_generate_core"
-	"../model_file_generator"
+	"../json_generator"
 	"github.com/sqweek/dialog"
 
 	"fyne.io/fyne"
@@ -175,7 +175,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		}
 	})
 	modelJsonGenerator := widget.NewButton("Connect to database and generate json description", func() {
-		wi, err := model_file_generator.RunWithUI(app, cachePath)
+		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
 			wi.Show()
 		}

@@ -1,15 +1,15 @@
-package cache_file
+package map_type
 
 import (
 	"log"
 	"path/filepath"
 )
 
-const filePath = "./cache_file/cache.yaml"
+const filePath = "./data_type"
 
-var AbsPath = CacheAbsPath()
+var DTypeAbsPath = DataTypeAbsPath()
 
-func CacheAbsPath() string {
+func DataTypeAbsPath() string {
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
 		log.Println(err)

@@ -1,10 +1,10 @@
-package database_config
+package db_config
 
 import (
 	"log"
 	"strings"
 
-	. "../data_type"
+	. "../map_type"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 )

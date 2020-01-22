@@ -1,4 +1,4 @@
-package database_relationship
+package db_relationship
 
 import (
 	"encoding/json"
@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	. "../database_config"
-	. "../yaml_cache/cache_yaml"
+	. "../cache/yaml/cache_cipher"
+	. "../db_config"
 	. "./constants"
 	. "./database_models"
 	"fyne.io/fyne"

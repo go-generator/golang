@@ -1,7 +1,7 @@
 package database_models
 
 import (
-	. "../../database_config"
+	. "../../db_config"
 	. "../common"
 	. "../constants"
 	"github.com/jinzhu/gorm"

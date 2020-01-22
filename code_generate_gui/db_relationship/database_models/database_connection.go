@@ -3,7 +3,7 @@ package database_models
 import (
 	"strconv"
 
-	. "../../database_config"
+	. "../../db_config"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mssql"
 	_ "github.com/jinzhu/gorm/dialects/mysql"

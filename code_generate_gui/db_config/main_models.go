@@ -1,4 +1,4 @@
-package database_config
+package db_config
 
 import (
 	"strings"
@@ -41,9 +41,20 @@ type TypeAlias struct {
 }
 
 type FieldElements struct {
-	Name       string `json:"name"`
-	Source     string `json:"source"`
-	Type       string `json:"type"`
-	ForeignKey string `json:"foreignKey"`
-	PrimaryKey bool   `json:"primaryKey"`
+	Name          string         `json:"name"`
+	Source        string         `json:"source"`
+	Type          string         `json:"type"`
+	ForeignKey    string         `json:"foreignKey"`
+	Relationships []Relationship `json:"relationships"`
+	PrimaryKey    bool           `json:"primaryKey"`
+}
+
+type Relationship struct {
+	ReType string
+	Ref    References
+}
+
+type References struct {
+	Table   string
+	RefCols []string
 }

@@ -4,7 +4,7 @@ package main
 import (
 	"net/url"
 
-	. "./cache_file"
+	. "./cache"
 	"./data"
 	"./screens"
 	"fyne.io/fyne"
