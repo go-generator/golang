@@ -2,9 +2,9 @@ package config
 
 import (
 	"context"
-	"evaluation/controller"
+	"{projectName}/controller"
 
-	"evaluation/service/impl"
+	"{projectName}/service/impl"
 
 	"github.com/common-go/mongo"
 )

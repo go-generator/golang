@@ -1,7 +1,7 @@
 package {env}
 
 import (
-	. "evaluation/model"
+	. "{projectName}/model"
 	. "github.com/common-go/mongo"
 	"go.mongodb.org/mongo-driver/mongo"
 	"reflect"

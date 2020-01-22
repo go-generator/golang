@@ -102,6 +102,8 @@ func InputStructToOutputString(result *string) string {
 			if strings.Contains(template, "{begin}") {
 				text := template
 				text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
+				text = strings.ReplaceAll(text, "{projectName}", projectName)
+				text = strings.ReplaceAll(text, "{projectNameUpperFirstCharacter}", strings.Title(projectName))
 				for strings.Contains(text, "{begin}") {
 					begin := strings.Index(text, "{begin}")
 					end := strings.Index(text, "{end}")
@@ -128,6 +130,8 @@ func InputStructToOutputString(result *string) string {
 				for j := range input.Folders[k].Entity {
 					text := template
 					text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
+					text = strings.ReplaceAll(text, "{projectName}", projectName)
+					text = strings.ReplaceAll(text, "{projectNameUpperFirstCharacter}", strings.Title(projectName))
 					text = strings.ReplaceAll(text, "{entity}", input.Folders[k].Entity[j])
 					text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:])
 					filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])

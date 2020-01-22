@@ -1,10 +1,10 @@
 package {env}
 
 import (
-	"evaluation/handler"
-    "evaluation/model"
-    "evaluation/search-model"
-    "evaluation/service"
+	"{projectName}/handler"
+    "{projectName}/model"
+    "{projectName}/search-model"
+    "{projectName}/service"
     . "github.com/common-go/echo"
     "reflect"
 )
