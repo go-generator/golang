@@ -110,9 +110,17 @@ func (info RouteInfo) PathHandler(c echo.Context) error {
 		var tmp []ErrorMessage
 		tmp, input = Validate(input, table[info.Source])
 		log.Print(tmp)
+		if len(tmp) != 0 {
+			return c.JSON(http.StatusBadRequest, tmp)
+		}
 		err = t.Create()
 	case "update":
-		//_ = Validator(info.Source, m, input)
+		var tmp []ErrorMessage
+		tmp, input = Validate(input, table[info.Source])
+		log.Print(tmp)
+		if len(tmp) != 0 {
+			return c.JSON(http.StatusBadRequest, tmp)
+		}
 		err = t.Update()
 	case "delete":
 		err = t.Delete()
@@ -204,7 +212,6 @@ func Validate(input map[string]interface{}, instruct InnerMap) ([]ErrorMessage, 
 				if _, t := v.(string); t {
 
 					if x, err := strconv.ParseFloat(v.(string), 64); err == nil {
-						//(*input)[k] = x
 						input[k] = x
 						ok = true
 
@@ -218,7 +225,6 @@ func Validate(input map[string]interface{}, instruct InnerMap) ([]ErrorMessage, 
 			layout := "2006-01-02T15:04:05.000Z"
 			if _, t := v.(string); t {
 				if x, err := time.Parse(layout, v.(string)); err == nil {
-					//(*input)[k] = x
 					input[k] = x
 					ok = true
 				}
@@ -228,33 +234,52 @@ func Validate(input map[string]interface{}, instruct InnerMap) ([]ErrorMessage, 
 			x := true
 			ok, x = IsBolean(v)
 			if ok {
-				//(*input)[k] = result
 				input[k] = x
 			}
 		case "email":
-			ok = valid.IsEmail(v.(string))
+			ok = false
+			if _, t := v.(string); t {
+				ok = valid.IsEmail(v.(string))
+			}
 		case "url":
-			ok = valid.IsURL(v.(string))
+			ok = false
+			if _, t := v.(string); t {
+				ok = valid.IsURL(v.(string))
+			}
 		case "":
 			ok = false
 
 		default:
 			if instruct[k][:2] == "[]" {
 				tmpMap2 := []map[string]interface{}{}
-				x, _ := v.([]interface{})
-				for i := range x {
-
-					returnErr, returnMap := Validate(x[i].(map[string]interface{}), table[instruct[k][2:]])
-					tmpMap2 = append(tmpMap2, returnMap)
-					errList = append(errList, returnErr...)
+				x, t := v.([]interface{})
+				var errList1 []ErrorMessage
+				if t {
+					for i := range x {
+						x1, t1 := x[i].(map[string]interface{})
+						if !t1 {
+							t = false
+							break
+						}
+						returnErr, returnMap := Validate(x1, table[instruct[k][2:]])
+						tmpMap2 = append(tmpMap2, returnMap)
+						errList1 = append(errList1, returnErr...)
+					}
+					if t {
+						input[k] = tmpMap2
+						errList = append(errList, errList1...)
+					}
 				}
-				input[k] = tmpMap2
+				ok = t
 
 			} else {
-
-				returnErr, returnMap := Validate(v.(map[string]interface{}), table[instruct[k]])
-				input[k] = returnMap
-				errList = append(errList, returnErr...)
+				x, t := v.(map[string]interface{})
+				if t {
+					returnErr, returnMap := Validate(x, table[instruct[k]])
+					input[k] = returnMap
+					errList = append(errList, returnErr...)
+				}
+				ok = t
 			}
 		}
 		if !ok {
@@ -279,25 +304,6 @@ type InnerMap map[string]string
 var table = OuterMap{}
 
 func main() {
-	//table = OuterMap{
-	//	"student":  InnerMap{},
-	//	"hometown": InnerMap{},
-	//}
-	//table["student"] = InnerMap{
-	//	"custom": "[]hometown",
-	//}
-	//table["hometown"] = InnerMap{
-	//	"place": "int",
-	//}
-	//
-	//input := map[string]interface{}{
-	//	"custom1": []map[string]interface{}{
-	//		{"place": "a"}, {"place": "b"},
-	//	},
-	//}
-	//
-	//tmp := Validate(input, table["student"])
-	//log.Print(tmp)
 
 	e := echo.New()
 	var r2 RouteList
