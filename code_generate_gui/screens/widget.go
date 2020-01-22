@@ -94,21 +94,13 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	largeText2 := widget.NewMultiLineEntry()
 	largeText2.SetPlaceHolder("Output")
 	cursorRow := widget.NewLabel("")
-	//largeText2.OnChanged = func(s string) {
-	//	log.Println(s)
-	//	err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &s)
-	//	if err == "" {
-	//		largeText2.SetText(s)
-	//		cursorRow.SetText("OK")
-	//	} else {
-	//		cursorRow.SetText(err)
-	//	}
-	//}
+
 	okButton := widget.NewButton("Code Generate", func() {
 		result := ""
 		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &result)
 		if err == "" {
-			largeText2.SetText(result)
+			//largeText2.SetText(result)
+			//ShowWindows(app, "Output", largeText2.Text)
 			cursorRow.SetText("OK")
 		} else {
 			cursorRow.SetText(err)
@@ -123,6 +115,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			err := code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result)
 			if err == "" {
 				largeText2.SetText(result)
+				//ShowWindows(app, "Output", result)
 				cursorRow.SetText("OK")
 			} else {
 				cursorRow.SetText(err)
@@ -174,7 +167,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			}
 		}
 	})
-	modelJsonGenerator := widget.NewButton("Connect to database and generate json description", func() {
+	modelJsonGenerator := widget.NewButton("Json description generator", func() {
 		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
 			wi.Show()
@@ -191,7 +184,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	list.Append(zipAsButton)
 	list2.Append(projectName)
 	list2.Append(largeText)
-	list2.Append(largeText2)
+	//list2.Append(largeText2)
 	list.Append(modelJsonGenerator)
 	statusBar := widget.NewHBox(layout.NewSpacer(),
 		widget.NewLabel("Status:"), cursorRow,

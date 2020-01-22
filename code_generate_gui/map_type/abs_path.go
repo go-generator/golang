@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-const filePath = "./data_type"
+const filePath = "./map_type"
 
 var DTypeAbsPath = DataTypeAbsPath()
 

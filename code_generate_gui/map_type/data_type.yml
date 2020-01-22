@@ -9,4 +9,12 @@ typeConvert:
   smallint: "int8"
   bigint: "int64"
   mediumtext: "string"
+  blob: "[]byte"
   mediumblob: "[]byte"
+  boolean: "bool"
+  real: "float64"
+  float: "float64"
+  doubleprecision: "float64"
+  time: "time.Time"
+
+
