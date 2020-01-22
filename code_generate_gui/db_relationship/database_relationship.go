@@ -162,6 +162,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 			}
 			rl := GetRelationship(v.ColumnName, rt)
 			if rl != nil {
+				log.Println(rl)
 				var relationship Relationship
 				relationship.ReType = rl.Relationship
 				var foreign FieldElements
