@@ -21,12 +21,13 @@ type Folders struct {
 }
 
 type ModelJSON struct {
-	Name       string          `json:"name"`
-	Source     string          `json:"source"`
-	ConstValue []Const         `json:"const"`
-	TypeAlias  []TypeAlias     `json:"type_alias"`
-	Fields     []FieldElements `json:"fields"`
-	WriteFile  strings.Builder `json:"-"`
+	Name          string          `json:"name"`
+	Source        string          `json:"source"`
+	ConstValue    []Const         `json:"const"`
+	TypeAlias     []TypeAlias     `json:"type_alias"`
+	Relationships []Relationship  `json:"relationships"`
+	Fields        []FieldElements `json:"fields"`
+	WriteFile     strings.Builder `json:"-"`
 }
 
 type Const struct {
@@ -41,12 +42,11 @@ type TypeAlias struct {
 }
 
 type FieldElements struct {
-	Name          string         `json:"name"`
-	Source        string         `json:"source"`
-	Type          string         `json:"type"`
-	ForeignKey    string         `json:"foreignKey"`
-	Relationships []Relationship `json:"relationships"`
-	PrimaryKey    bool           `json:"primaryKey"`
+	Name       string `json:"name"`
+	Source     string `json:"source"`
+	Type       string `json:"type"`
+	ForeignKey string `json:"foreignKey"`
+	PrimaryKey bool   `json:"primaryKey"`
 }
 
 type Relationship struct {

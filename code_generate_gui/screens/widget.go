@@ -74,7 +74,6 @@ func makeProgressTab() fyne.Widget {
 }
 
 func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
-	var modifiedFilename string
 	projectName := widget.NewEntry()
 	projectName.SetPlaceHolder("Project Name")
 	templateDir := widget.NewEntry()
@@ -106,7 +105,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			cursorRow.SetText(err)
 		}
 	})
-	openFileButton := widget.NewButton("Code Generate From File...", func() {
+	openFileButton := widget.NewButton("Generate Code From File...", func() {
 		filename, err := dialog.File().Filter("JSON/Text file", "json", "txt").Load()
 		if err != nil {
 			cursorRow.SetText(err.Error())
@@ -115,13 +114,19 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			err := code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result)
 			if err == "" {
 				largeText2.SetText(result)
-				//ShowWindows(app, "Output", result)
 				cursorRow.SetText("OK")
 			} else {
 				cursorRow.SetText(err)
+				return
 			}
 		}
-		modifiedFilename = filename
+		directory, err := dialog.Directory().Title("Save Generated Files In...").Browse()
+		err1 := code_generate_core.OutputStructToFiles(directory)
+		if err1 != "" {
+			cursorRow.SetText(err1)
+		} else {
+			cursorRow.SetText("Files Created On Disk")
+		}
 	})
 
 	saveButton := widget.NewButton("Save Files (to main.go folder or input.json folder)", func() {
@@ -132,19 +137,19 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			cursorRow.SetText("Files Created On Disk")
 		}
 	})
-	saveAsButton := widget.NewButton("Save Files As...", func() {
-		directory, err := dialog.Directory().Title("Save Files As...").Browse()
-		if err != nil {
-			cursorRow.SetText(err.Error())
-		} else {
-			err := code_generate_core.OutputStructToFiles(directory)
-			if err != "" {
-				cursorRow.SetText(err)
-			} else {
-				cursorRow.SetText("Files Created On Disk")
-			}
-		}
-	})
+	//saveAsButton := widget.NewButton("Save Files As...", func() {
+	//	directory, err := dialog.Directory().Title("Save Files As...").Browse()
+	//	if err != nil {
+	//		cursorRow.SetText(err.Error())
+	//	} else {
+	//		err := code_generate_core.OutputStructToFiles(directory)
+	//		if err != "" {
+	//			cursorRow.SetText(err)
+	//		} else {
+	//			cursorRow.SetText("Files Created On Disk")
+	//		}
+	//	}
+	//})
 	zipButton := widget.NewButton("Save Zip (to main.go folder or input.json folder)", func() {
 		err := code_generate_core.OutputStructToZip("")
 		if err != "" {
@@ -167,7 +172,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			}
 		}
 	})
-	modelJsonGenerator := widget.NewButton("Json description generator", func() {
+	modelJsonGenerator := widget.NewButton("Json Description Generator", func() {
 		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
 			wi.Show()
@@ -180,7 +185,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	list.Append(saveButton)
 	list.Append(zipButton)
 	list.Append(openFileButton)
-	list.Append(saveAsButton)
+	//list.Append(saveAsButton)
 	list.Append(zipAsButton)
 	list2.Append(projectName)
 	list2.Append(largeText)

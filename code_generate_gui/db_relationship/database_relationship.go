@@ -84,10 +84,15 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 			if rl != nil {
 				var foreign FieldElements
 				if rl.Relationship == MTO && k.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
+					var relationship Relationship
+					relationship.ReType = MTO
+					relationship.Ref.Table = k.TableName
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
 					foreign.ForeignKey = rl.Column
+					relationship.Ref.RefCols = append(relationship.Ref.RefCols, rl.Column)
+					m.Relationships = append(m.Relationships, relationship)
 					m.Fields = append(m.Fields, foreign)
 				}
 				if rl.Relationship == MTO {
@@ -157,12 +162,17 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 			}
 			rl := GetRelationship(v.ColumnName, rt)
 			if rl != nil {
+				var relationship Relationship
+				relationship.ReType = rl.Relationship
 				var foreign FieldElements
 				if rl.Relationship == MTO && v.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
+					relationship.Ref.Table = rl.Table
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
 					foreign.ForeignKey = rl.Column
+					relationship.Ref.RefCols = append(relationship.Ref.RefCols, rl.Column)
+					m.Relationships = append(m.Relationships, relationship)
 					m.Fields = append(m.Fields, foreign)
 				}
 				if rl.Relationship == MTO {
