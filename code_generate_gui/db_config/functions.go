@@ -68,5 +68,6 @@ func ShowWindows(app fyne.App, title, message string) {
 	wa.SetContent(widget.NewVBox(
 		widget.NewLabel(message),
 	))
+	wa.CenterOnScreen()
 	wa.Show()
 }

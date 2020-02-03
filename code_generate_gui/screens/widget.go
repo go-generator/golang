@@ -172,7 +172,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			}
 		}
 	})
-	modelJsonGenerator := widget.NewButton("Json Description Generator", func() {
+	modelJsonGenerator := widget.NewButton("Generate Json Description", func() {
 		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
 			wi.Show()
