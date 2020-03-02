@@ -19,7 +19,7 @@ func AddBSONTag(name string) string {
 	return " bson:\"" + ToLower(name) + "\""
 }
 
-func AddGORMTag(name string, primaryTag bool) string {
+func AddGormTag(name string, primaryTag bool) string {
 	if name == "" {
 		return "`\n"
 	}

@@ -185,35 +185,11 @@ func ReadAllSubFiles(rootPath string) []string {
 }
 
 func ModelJSONFileGenerator(content FilesDetails, out *Output) {
-	//var out Output
-	//out.ProjectName = projectName
-	//out.RootPath = rootPath
-	//if _, err := os.Stat(destination); os.IsNotExist(err) {
-	//	err = os.Mkdir(destination, 0777)
-	//	if err != nil {
-	//		log.Fatal("Failed attempt to create directory, " + err.Error())
-	//	}
-	//}
-	//fileDirectory := destination + output + ".json"
-	//jsonFiles := ReadAllSubFiles(source)
-
 	var file File
-	//content := ReadJSON(source + v) // struct content
-
 	for _, k := range content.Files {
 		k.CreateContent(content.Model)
 		file.Name = content.Model + "/" + ToLower(k.Name) + ".go"
 		file.Content = k.WriteFile.String()
 		out.Files = append(out.Files, file)
 	}
-
-	//data, err := json.MarshalIndent(out, "", " ")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//err = ioutil.WriteFile(fileDirectory, data, 0644) // Create and write files
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//log.Println("Generated Successfully")
 }

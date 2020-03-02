@@ -10,6 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+
+	"golang/code_generate_gui/db_relationship/common"
 )
 
 const (
@@ -165,21 +168,22 @@ func FileNameConverter(s string, path string) string {
 	path = strings.ReplaceAll(path, "/", "_")
 	return s3[1:] + "_" + path + ".go"
 }
-func OutputStructToFiles(direc string) string {
+func OutputStructToFiles(directory string) string {
 	//CREATE FOLDER ON DISK
 	if len(output.Files) == 0 {
 		return "0 File Created On Disk"
 	}
-	if direc != "" {
-		output.RootPath = direc
+	if directory != "" {
+		output.RootPath = directory
 	}
 	if output.RootPath != "" {
 		err := os.MkdirAll(output.RootPath, os.ModePerm)
 		if err != nil {
 			return err.Error()
 		}
-		output.RootPath += "/"
+		output.RootPath += string(os.PathSeparator)
 	}
+	var allFiles []string
 	for i := range output.Files {
 		tmpPath := output.RootPath + output.Files[i].Name
 		tmp := strings.LastIndex(tmpPath, "/")
@@ -196,12 +200,24 @@ func OutputStructToFiles(direc string) string {
 		if err != nil {
 			return err.Error()
 		}
+		allFiles = append(allFiles, f.Name())
 		err = f.Close()
 		if err != nil {
 			return err.Error()
 		}
 	}
-	//return strconv.Itoa(len(output.Files)) + " files created on disk"
+	var wg sync.WaitGroup
+	for i := range allFiles {
+		wg.Add(1)
+		go func(dir string, wtg *sync.WaitGroup) {
+			defer wtg.Done()
+			_, err := common.ShellExecutor("gofmt", []string{"-w", dir})
+			if err != nil {
+				log.Println(err)
+			}
+		}(allFiles[i], &wg)
+	}
+	wg.Wait()
 	return ""
 }
 func OutputStructToZip(direc string) string {

@@ -2,6 +2,7 @@ package screens
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"../code_generate_core"
@@ -106,7 +107,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		}
 	})
 	openFileButton := widget.NewButton("Generate Code From File...", func() {
-		filename, err := dialog.File().Filter("JSON/Text file", "json", "txt").Load()
+		filename, err := dialog.File().Filter("json/text file", "json", "txt").Load()
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {
@@ -137,19 +138,6 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			cursorRow.SetText("Files Created On Disk")
 		}
 	})
-	//saveAsButton := widget.NewButton("Save Files As...", func() {
-	//	directory, err := dialog.Directory().Title("Save Files As...").Browse()
-	//	if err != nil {
-	//		cursorRow.SetText(err.Error())
-	//	} else {
-	//		err := code_generate_core.OutputStructToFiles(directory)
-	//		if err != "" {
-	//			cursorRow.SetText(err)
-	//		} else {
-	//			cursorRow.SetText("Files Created On Disk")
-	//		}
-	//	}
-	//})
 	zipButton := widget.NewButton("Save Zip (to main.go folder or input.json folder)", func() {
 		err := code_generate_core.OutputStructToZip("")
 		if err != "" {
@@ -176,6 +164,8 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
 			wi.Show()
+		} else {
+			log.Println(err)
 		}
 	})
 	list := widget.NewVBox()
@@ -195,29 +185,8 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		widget.NewLabel("Status:"), cursorRow,
 	)
 	list.Append(statusBar)
-
-	//	OnCancel: func() {
-	//		fmt.Println("Cancelled")
-	//	},
-	//	OnSubmit: func() {
-	//		fmt.Println("Input:", largeText.Text)
-	//		fmt.Println("Output:", largeText2.Text)
-	//		output:= CodeGenerate(largeText.Text)
-	//		largeText2.SetText(output)
-	//	},
-	//}
-	//
-	//form.Append("Input", largeText)
-	//form.Append("Output", largeText2)
-	//scroll := widget.NewScrollContainer(list)
-	//scroll.Resize(fyne.NewSize(200, 100))
-
 	scroll2 := widget.NewScrollContainer(list2)
-	//scroll2.Resize(fyne.NewSize(200, 100))
-
-	//return form
 	return fyne.NewContainerWithLayout(layout.NewGridLayout(1), scroll2, list)
-	//return fyne.NewContainerWithLayout(scroll2,list,statusBar)
 }
 
 func makeScrollTab() fyne.CanvasObject {
@@ -225,7 +194,6 @@ func makeScrollTab() fyne.CanvasObject {
 	logo.SetMinSize(fyne.NewSize(320, 320))
 	list := widget.NewHBox()
 	list2 := widget.NewVBox()
-
 	for i := 1; i <= 20; i++ {
 		index := i // capture
 		list.Append(widget.NewButton(fmt.Sprintf("Button %d", index), func() {
@@ -235,13 +203,10 @@ func makeScrollTab() fyne.CanvasObject {
 			fmt.Println("Tapped", index)
 		}))
 	}
-
 	scroll := widget.NewScrollContainer(list)
 	scroll.Resize(fyne.NewSize(200, 300))
-
 	scroll2 := widget.NewScrollContainer(list2)
 	scroll2.Resize(fyne.NewSize(200, 100))
-
 	return fyne.NewContainerWithLayout(layout.NewGridLayout(1), scroll, scroll2)
 }
 
@@ -257,23 +222,5 @@ func makeScrollBothTab() fyne.CanvasObject {
 
 // WidgetScreen shows a panel containing widget demos
 func WidgetScreen(app fyne.App, cachePath string) fyne.CanvasObject {
-	//toolbar := widget.NewToolbar(widget.NewToolbarAction(theme.MailComposeIcon(), func() { fmt.Println("New") }),
-	//	widget.NewToolbarSeparator(),
-	//	widget.NewToolbarSpacer(),
-	//	widget.NewToolbarAction(theme.ContentCutIcon(), func() { fmt.Println("Cut") }),
-	//	widget.NewToolbarAction(theme.ContentCopyIcon(), func() { fmt.Println("Copy") }),
-	//	widget.NewToolbarAction(theme.ContentPasteIcon(), func() { fmt.Println("Paste") }),
-	//)
-
-	//return fyne.NewContainerWithLayout(layout.NewBorderLayout(nil, nil, nil, nil),
-	//	widget.NewTabContainer(
-	//		//widget.NewTabItem("Buttons", makeButtonTab()),
-	//		//widget.NewTabItem("Input", makeInputTab()),
-	//		//widget.NewTabItem("Progress", makeProgressTab()),
-	//		widget.NewTabItem("Code Generator", makeFormTab()),
-	//		//widget.NewTabItem("Scroll", makeScrollTab()),
-	//		//widget.NewTabItem("Full Scroll", makeScrollBothTab()),
-	//	),
-	//)
 	return makeFormTab(app, cachePath)
 }

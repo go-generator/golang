@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	. "../cache/yaml/cache_cipher"
 	. "../db_config"
@@ -18,6 +17,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
 )
+
+var env = "model"
 
 // 1-1 -> both fields are unique
 // 1-n -> only one field is unique
@@ -73,7 +74,7 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 					f.Source = ToLower(s.GoFields[i])
 				}
 			}
-			f.Type = s.TypeMap.TypeConvert[k.DataType]
+			f.Type = s.TypeConvert[k.DataType]
 			f.Name = s.GoFields[i]
 			if k.ColumnKey == "PRI" {
 				f.PrimaryKey = true
@@ -83,21 +84,21 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 			rl := GetRelationship(k.ColumnName, rt)
 			if rl != nil {
 				var foreign FieldElements
-				if rl.Relationship == MTO && k.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
+				if rl.Relationship == ManyToOne && k.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
 					var relationship Relationship
-					relationship.ReType = MTO
+					relationship.ReType = ManyToOne
 					relationship.Ref.Table = k.TableName
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
-					foreign.ForeignKey = rl.Column
+					//foreign.ForeignKey = rl.Column
 					relationship.Ref.RefCols = append(relationship.Ref.RefCols, rl.Column)
 					m.Relationships = append(m.Relationships, relationship)
 					m.Fields = append(m.Fields, foreign)
 				}
-				if rl.Relationship == MTO {
-					f.ForeignKey = rl.ReferencedTable
-				}
+				//if rl.Relationship == ManyToOne {
+				//	f.ForeignKey = rl.ReferencedTable
+				//}
 			}
 			m.Fields = append(m.Fields, f)
 		}
@@ -154,7 +155,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 				}
 			}
 			f.Name = s.GoFields[i]
-			f.Type = s.TypeMap.TypeConvert[v.DataType]
+			f.Type = s.TypeConvert[v.DataType]
 			if v.ColumnKey == "PRI" {
 				f.PrimaryKey = true
 			} else {
@@ -166,19 +167,19 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 				var relationship Relationship
 				relationship.ReType = rl.Relationship
 				var foreign FieldElements
-				if rl.Relationship == MTO && v.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
+				if rl.Relationship == ManyToOne && v.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
 					relationship.Ref.Table = rl.Table
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
-					foreign.ForeignKey = rl.Column
+					//foreign.ForeignKey = rl.Column
 					relationship.Ref.RefCols = append(relationship.Ref.RefCols, rl.Column)
 					m.Relationships = append(m.Relationships, relationship)
 					m.Fields = append(m.Fields, foreign)
 				}
-				if rl.Relationship == MTO {
-					f.ForeignKey = rl.ReferencedTable
-				}
+				//if rl.Relationship == ManyToOne {
+				//	f.ForeignKey = rl.ReferencedTable
+				//}
 			}
 			m.Fields = append(m.Fields, f)
 		}
@@ -226,14 +227,14 @@ func InputValidation(app fyne.App, dc *DatabaseConfig, conn *gorm.DB) {
 		ShowWindows(app, "Error", "Invalid Database Name")
 		return
 	}
-	filename, errFile := dialog.File().Filter("JSON files", "json").Title("Save As").Save()
+	filename, errFile := dialog.File().Filter("json files", "json").Title("Save As").Save()
 	if errFile != nil {
 		ShowWindows(app, "Error", errFile.Error())
 		return
 	}
-	tokens := strings.Split(filename, string(os.PathSeparator))
+	//tokens := strings.Split(filename, string(os.PathSeparator))
 	rl, _ := DatabaseRelationships(*dc, conn)
-	err := JsonUI(tokens[len(tokens)-2], filename+".json", conn, dc, rl)
+	err := JsonUI(env, filename+".json", conn, dc, rl)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
@@ -292,9 +293,10 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	providerEntry := widget.NewRadio([]string{"mysql", "postgres", "mssql", "sqlite3"}, func(s string) {
 		dc.SetDialect(s)
 	})
+	providerEntry.Selected = dc.Dialect
+	providerEntry.Refresh()
+
 	window.SetContent(widget.NewVBox(
-		//widget.NewLabel("Dialect:"),
-		//dialectEntry,
 		widget.NewLabel("Provider:"),
 		providerEntry,
 		widget.NewLabel("User:"),

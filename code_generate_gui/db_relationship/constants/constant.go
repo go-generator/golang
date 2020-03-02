@@ -1,10 +1,10 @@
 package constants
 
 const (
-	OTO = "One To One"
-	OTM = "One To Many"
-	MTO = "Many To One"
-	MTM = "Many To Many"
-	UNK = "Unknown"
-	UNS = "Unsupported"
+	OneToOne    = "One To One"
+	OneToMany   = "One To Many"
+	ManyToOne   = "Many To One"
+	ManyToMany  = "Many To Many"
+	UNKNOWN     = "Unknown"
+	UNSUPPORTED = "Unsupported"
 )

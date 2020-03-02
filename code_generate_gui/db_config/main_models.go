@@ -42,11 +42,11 @@ type TypeAlias struct {
 }
 
 type FieldElements struct {
-	Name       string `json:"name"`
-	Source     string `json:"source"`
-	Type       string `json:"type"`
-	ForeignKey string `json:"foreignKey"`
-	PrimaryKey bool   `json:"primaryKey"`
+	Name   string `json:"name"`
+	Source string `json:"source"`
+	Type   string `json:"type"`
+	//ForeignKey string `json:"foreignKey"`
+	PrimaryKey bool `json:"primaryKey"`
 }
 
 type Relationship struct {

@@ -7,6 +7,8 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+var ()
+
 type RelationshipTables struct {
 	Table            string `gorm:"column:TABLE_NAME"`
 	Column           string `gorm:"column:COLUMN_NAME"`
@@ -16,33 +18,33 @@ type RelationshipTables struct {
 }
 
 func checkRelation(check, checkReference bool, database string, connection *DatabaseConnection, rt *RelationshipTables) string {
-	// Already cover the MTM case where a joined table consists of two or more primary key tags that are all foreign keys
+	// Already cover the ManyToMany case where a joined table consists of two or more primary key tags that are all foreign keys
 	isPrimaryTag := CheckPrimaryTag(database, rt.Table, rt.Column, connection.GetConnection())
 	isReferencedPrimaryTag := CheckPrimaryTag(database, rt.ReferencedTable, rt.ReferencedColumn, connection.GetConnection())
 	if !checkReference {
-		return UNS
+		return UNSUPPORTED
 	}
 	if check {
 		count := CompositeKeyColumns(connection.GetConnection(), database, rt.Table)
 		if len(count) == 1 { // Only one column has Primary Tag
 			if isPrimaryTag && isReferencedPrimaryTag { // Both are Primary key
-				return OTO
+				return OneToOne
 			}
 			if !isPrimaryTag && isReferencedPrimaryTag { // Column is only a foreign key referenced to other primary key
-				return MTO
+				return ManyToOne
 			}
 		}
 		if len(count) > 1 { // Consist of at least one column that has primary key tag and not referenced to other table
-			return OTM
+			return OneToMany
 		}
 	}
 	if !check {
-		return MTO
+		return ManyToOne
 	}
 	if !check && !checkReference {
-		return UNS
+		return UNSUPPORTED
 	}
-	return UNK
+	return UNKNOWN
 }
 
 func FindRelationShip(database string, connection *DatabaseConnection, joinedTable []string, rt *RelationshipTables) string {
@@ -50,7 +52,7 @@ func FindRelationShip(database string, connection *DatabaseConnection, joinedTab
 	checkReference := CheckUniqueness(database, rt.ReferencedTable, rt.ReferencedColumn, connection.GetConnection())
 	for _, v := range joinedTable {
 		if rt.Table == v {
-			return MTM
+			return ManyToMany
 		}
 	}
 	return checkRelation(check, checkReference, database, connection, rt)
@@ -74,9 +76,14 @@ func IsJoinedTable(table string, columns []string, rt []RelationshipTables) bool
 	return true
 }
 
-func NewRelationshipTables(dbConfig *DatabaseConfig, connection *DatabaseConnection) []RelationshipTables {
+func NewRelationshipTables(dbConfig *DatabaseConfig, connection *DatabaseConnection) []RelationshipTables { // mysql only for now
 	var res []RelationshipTables
-	connection.GetConnection().Table("information_schema.key_column_usage").Select("*").Where("constraint_schema = '" + dbConfig.Database + "' and referenced_table_schema is not null and referenced_table_name is not null and referenced_column_name is not null").Scan(&res)
+	switch dbConfig.Dialect {
+	case "postgres":
+		connection.GetConnection().Raw("SELECT tc.table_schema, tc.constraint_name, tc.table_name AS TABLE_NAME, kcu.column_name AS COLUMN_NAME, ccu.table_schema AS foreign_table_schema,  ccu.table_name AS REFERENCED_TABLE_NAME, ccu.column_name AS REFERENCED_COLUMN_NAME FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY';").Scan(&res)
+	case "mysql":
+		connection.GetConnection().Table("information_schema.key_column_usage").Select("*").Where("constraint_schema = '" + dbConfig.Database + "' and referenced_table_schema is not null and referenced_table_name is not null and referenced_column_name is not null").Scan(&res)
+	}
 	return res
 } // Find all columns, table and its referenced columns, tables
 

@@ -2,6 +2,8 @@ package common
 
 import "C"
 import (
+	"log"
+	"os/exec"
 	"reflect"
 	"strings"
 
@@ -14,14 +16,27 @@ type Uniqueness struct {
 	KeyName    string `gorm:"column:Key_name"`
 }
 
+type PostgresUnique struct {
+	// Add struct
+}
+
 type ColumnName struct {
 	ColumnName string `gorm:"column:COLUMN_NAME"`
 }
 
 func CheckUniqueness(database, table, column string, conn *gorm.DB) bool {
 	var index []Uniqueness
-	sqlString := "show indexes from " + database + "." + table
-	conn.Raw(sqlString).Scan(&index)
+	mysqlString := "show indexes from " + database + "." + table
+	postgresString := "SELECT * FROM pg_indexes WHERE tablename = '" + table + "'"
+	log.Println(postgresString)
+	log.Println(conn.Dialect().GetName())
+	switch conn.Dialect().GetName() {
+	case "postgres":
+
+	case "mysql":
+		conn.Raw(mysqlString).Scan(&index)
+	}
+	conn.Raw(mysqlString).Scan(&index)
 	for _, v := range index {
 		if v.ColumnName == column {
 			if v.NonUnique == false {
@@ -80,4 +95,9 @@ func GetAllStructFields(v interface{}) []string {
 		res = append(res, val.Type().Field(i).Name)
 	}
 	return res
+}
+
+func ShellExecutor(program string, arguments []string) ([]byte, error) {
+	cmd := exec.Command(program, arguments...)
+	return cmd.Output()
 }
