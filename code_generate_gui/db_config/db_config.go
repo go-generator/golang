@@ -61,6 +61,7 @@ func (dc *DatabaseConfig) SetPort(value string) {
 	var err error
 	dc.Port, err = strconv.Atoi(value)
 	if err != nil {
+		dc.Port = 0
 		log.Println(err)
 	}
 }

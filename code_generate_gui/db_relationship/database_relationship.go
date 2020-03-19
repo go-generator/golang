@@ -252,9 +252,6 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	window.Resize(fyne.Size{
 		Width: 640,
 	})
-	//dialectEntry := widget.NewEntry()
-	//dialectEntry.OnChanged = dc.SetDialect
-	//dialectEntry.Text = dc.Dialect
 	usernameEntry := widget.NewEntry()
 	usernameEntry.OnChanged = dc.SetUsername
 	usernameEntry.Text = dc.User
@@ -295,7 +292,6 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	})
 	providerEntry.Selected = dc.Dialect
 	providerEntry.Refresh()
-
 	window.SetContent(widget.NewVBox(
 		widget.NewLabel("Provider:"),
 		providerEntry,
