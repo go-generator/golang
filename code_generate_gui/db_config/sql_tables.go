@@ -74,9 +74,10 @@ func (s *SqlTablesData) InitSqlTable(database string, tableName string, conn *go
 }
 
 func (s *SqlTablesData) FreeResources() {
-	for k := range s.TypeConvert {
-		delete(s.TypeConvert, k)
-	}
+	//for k := range s.TypeConvert {
+	//	delete(s.TypeConvert, k)
+	//}
+	s.TypeConvert = nil
 	log.Println("Resources are freed successfully")
 }
 

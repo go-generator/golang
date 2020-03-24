@@ -16,6 +16,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
+	"golang/code_generate_gui/utils"
 )
 
 var env = "model"
@@ -26,14 +27,12 @@ var env = "model"
 // self reference will be in the same table with the same datatype
 
 func DatabaseRelationships(dbConfig DatabaseConfig, conn *gorm.DB) ([]RelationshipTables, []string) {
-	var dbConnect DatabaseConnection
-	dbConnect.SetConnection(conn)
-	rt := NewRelationshipTables(&dbConfig, &dbConnect)
-	jt := ListAllJoinTablesWithCompositeKey(dbConfig.Database, dbConnect.GetConnection(), rt)
+	rt := NewRelationshipTables(&dbConfig, conn)
+	jt := ListAllJoinTablesWithCompositeKey(dbConfig.Database, conn, rt)
 	for i := range rt {
-		rt[i].Relationship = FindRelationShip(dbConfig.Database, &dbConnect, jt, &rt[i])
+		rt[i].Relationship = FindRelationShip(dbConfig.Database, conn, jt, &rt[i])
 	}
-	joinTable := ListAllJoinTablesWithCompositeKey(dbConfig.Database, dbConnect.GetConnection(), rt)
+	joinTable := ListAllJoinTablesWithCompositeKey(dbConfig.Database, conn, rt)
 	return rt, joinTable
 }
 
@@ -121,7 +120,7 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 	return err
 }
 
-func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []RelationshipTables) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []RelationshipTables, jt []string, opt bool) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
 	var s SqlTablesData
 	var err error
 	var files FilesDetails
@@ -139,6 +138,9 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 	s.InitSqlTablesData()
 	files.Model = env
 	for _, v := range tables {
+		if opt && utils.IsContainedInStrings(v, jt) { // Not generate model for many to many tables
+			continue
+		}
 		var m ModelJSON
 		m.Name = v
 		s.InitSqlTable(dc.Database, v, conn)
@@ -202,7 +204,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 	return err
 }
 
-func InputValidation(app fyne.App, dc *DatabaseConfig, conn *gorm.DB) {
+func InputValidationAndExecute(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
 	if dc.Dialect == "" {
 		ShowWindows(app, "Error", "Invalid Dialect")
 		return
@@ -232,9 +234,8 @@ func InputValidation(app fyne.App, dc *DatabaseConfig, conn *gorm.DB) {
 		ShowWindows(app, "Error", errFile.Error())
 		return
 	}
-	//tokens := strings.Split(filename, string(os.PathSeparator))
-	rl, _ := DatabaseRelationships(*dc, conn)
-	err := JsonUI(env, filename+".json", conn, dc, rl)
+	rl, jt := DatabaseRelationships(*dc, conn)
+	err := JsonUI(env, filename+".json", conn, dc, rl, jt, optimize)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
@@ -251,6 +252,10 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	window := app.NewWindow("Database Json Generator")
 	window.Resize(fyne.Size{
 		Width: 640,
+	})
+	var opt bool
+	optimizeEntry := widget.NewCheck("Optimization", func(b bool) {
+		opt = b
 	})
 	usernameEntry := widget.NewEntry()
 	usernameEntry.OnChanged = dc.SetUsername
@@ -279,7 +284,7 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 				log.Println(err)
 			}
 		}()
-		InputValidation(app, dc, conn)
+		InputValidationAndExecute(app, dc, conn, opt)
 		if temp != *dc {
 			err := WriteCacheFile(cache, dc, encryptField)
 			if err != nil {
@@ -293,6 +298,7 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	providerEntry.Selected = dc.Dialect
 	providerEntry.Refresh()
 	window.SetContent(widget.NewVBox(
+		optimizeEntry,
 		widget.NewLabel("Provider:"),
 		providerEntry,
 		widget.NewLabel("User:"),

@@ -7,8 +7,6 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var ()
-
 type RelationshipTables struct {
 	Table            string `gorm:"column:TABLE_NAME"`
 	Column           string `gorm:"column:COLUMN_NAME"`
@@ -17,15 +15,15 @@ type RelationshipTables struct {
 	Relationship     string
 }
 
-func checkRelation(check, checkReference bool, database string, connection *DatabaseConnection, rt *RelationshipTables) string {
+func checkRelation(check, checkReference bool, database string, connection *gorm.DB, rt *RelationshipTables) string {
 	// Already cover the ManyToMany case where a joined table consists of two or more primary key tags that are all foreign keys
-	isPrimaryTag := CheckPrimaryTag(database, rt.Table, rt.Column, connection.GetConnection())
-	isReferencedPrimaryTag := CheckPrimaryTag(database, rt.ReferencedTable, rt.ReferencedColumn, connection.GetConnection())
+	isPrimaryTag := CheckPrimaryTag(database, rt.Table, rt.Column, connection)
+	isReferencedPrimaryTag := CheckPrimaryTag(database, rt.ReferencedTable, rt.ReferencedColumn, connection)
 	if !checkReference {
 		return UNSUPPORTED
 	}
 	if check {
-		count := CompositeKeyColumns(connection.GetConnection(), database, rt.Table)
+		count := CompositeKeyColumns(connection, database, rt.Table)
 		if len(count) == 1 { // Only one column has Primary Tag
 			if isPrimaryTag && isReferencedPrimaryTag { // Both are Primary key
 				return OneToOne
@@ -47,9 +45,9 @@ func checkRelation(check, checkReference bool, database string, connection *Data
 	return UNKNOWN
 }
 
-func FindRelationShip(database string, connection *DatabaseConnection, joinedTable []string, rt *RelationshipTables) string {
-	check := CheckUniqueness(database, rt.Table, rt.Column, connection.GetConnection())
-	checkReference := CheckUniqueness(database, rt.ReferencedTable, rt.ReferencedColumn, connection.GetConnection())
+func FindRelationShip(database string, connection *gorm.DB, joinedTable []string, rt *RelationshipTables) string {
+	check := CheckUniqueness(database, rt.Table, rt.Column, connection)
+	checkReference := CheckUniqueness(database, rt.ReferencedTable, rt.ReferencedColumn, connection)
 	for _, v := range joinedTable {
 		if rt.Table == v {
 			return ManyToMany
@@ -76,13 +74,13 @@ func IsJoinedTable(table string, columns []string, rt []RelationshipTables) bool
 	return true
 }
 
-func NewRelationshipTables(dbConfig *DatabaseConfig, connection *DatabaseConnection) []RelationshipTables { // mysql only for now
+func NewRelationshipTables(dbConfig *DatabaseConfig, connection *gorm.DB) []RelationshipTables { // mysql only for now
 	var res []RelationshipTables
 	switch dbConfig.Dialect {
 	case "postgres":
-		connection.GetConnection().Raw("SELECT tc.table_schema, tc.constraint_name, tc.table_name AS TABLE_NAME, kcu.column_name AS COLUMN_NAME, ccu.table_schema AS foreign_table_schema,  ccu.table_name AS REFERENCED_TABLE_NAME, ccu.column_name AS REFERENCED_COLUMN_NAME FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY';").Scan(&res)
+		connection.Raw("SELECT tc.table_schema, tc.constraint_name, tc.table_name AS TABLE_NAME, kcu.column_name AS COLUMN_NAME, ccu.table_schema AS foreign_table_schema,  ccu.table_name AS REFERENCED_TABLE_NAME, ccu.column_name AS REFERENCED_COLUMN_NAME FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY';").Scan(&res)
 	case "mysql":
-		connection.GetConnection().Table("information_schema.key_column_usage").Select("*").Where("constraint_schema = '" + dbConfig.Database + "' and referenced_table_schema is not null and referenced_table_name is not null and referenced_column_name is not null").Scan(&res)
+		connection.Table("information_schema.key_column_usage").Select("*").Where("constraint_schema = '" + dbConfig.Database + "' and referenced_table_schema is not null and referenced_table_name is not null and referenced_column_name is not null").Scan(&res)
 	}
 	return res
 } // Find all columns, table and its referenced columns, tables

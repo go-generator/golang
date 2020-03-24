@@ -1,11 +1,12 @@
 package controller
 
 import (
+	"reflect"
+
 	. "../model"
 	. "../search-model"
 	. "../service"
 	. "github.com/common-go/echo"
-	"reflect"
 )
 
 type BookingController struct {

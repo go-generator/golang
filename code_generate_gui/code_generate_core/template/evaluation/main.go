@@ -1,17 +1,18 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	c "evaluation/config"
 	. "evaluation/route"
-	"fmt"
 	"github.com/common-go/config"
 	"github.com/common-go/echo"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	_ "gopkg.in/go-playground/validator.v9"
-	"log"
-	"net/http"
-	"os"
 )
 
 func main() {

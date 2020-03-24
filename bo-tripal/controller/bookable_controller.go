@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"reflect"
+
 	"../handler"
 	. "../model"
 	. "../search-model"
 	. "../service"
 	. "github.com/common-go/echo"
 	"github.com/common-go/validator"
-	"reflect"
 )
 
 type BookableController struct {

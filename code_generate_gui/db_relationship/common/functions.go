@@ -29,10 +29,10 @@ func CheckUniqueness(database, table, column string, conn *gorm.DB) bool {
 	mysqlString := "show indexes from " + database + "." + table
 	postgresString := "SELECT * FROM pg_indexes WHERE tablename = '" + table + "'"
 	log.Println(postgresString)
-	log.Println(conn.Dialect().GetName())
+	//log.Println(conn.Dialect().GetName())
 	switch conn.Dialect().GetName() {
 	case "postgres":
-
+		//TODO: Check Uniqueness for Postgres database
 	case "mysql":
 		conn.Raw(mysqlString).Scan(&index)
 	}
@@ -77,8 +77,8 @@ func GetCompositeColumnName(cn []ColumnName) []string { // Get Column Name of th
 }
 
 func CompositeKeyColumns(conn *gorm.DB, databaseName, table string) []string {
-	var sqlString strings.Builder
-	var res []ColumnName
+	sqlString := strings.Builder{}
+	res := make([]ColumnName, 0)
 	sqlString.WriteString("SELECT K.COLUMN_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS C JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS K ON C.TABLE_NAME = K.TABLE_NAME ")
 	sqlString.WriteString("AND C.CONSTRAINT_CATALOG = K.CONSTRAINT_CATALOG ")
 	sqlString.WriteString("AND C.CONSTRAINT_SCHEMA = K.CONSTRAINT_SCHEMA ")

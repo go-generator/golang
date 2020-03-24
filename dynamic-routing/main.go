@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+
 	valid "github.com/asaskevich/govalidator"
 	"github.com/common-go/mongo"
 	_ "github.com/denisenkom/go-mssqldb"
@@ -9,10 +14,6 @@ import (
 	"github.com/labstack/echo"
 	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type RouteInfo struct {

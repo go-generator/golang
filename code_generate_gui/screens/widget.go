@@ -107,7 +107,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		}
 	})
 	openFileButton := widget.NewButton("Generate Code From File...", func() {
-		filename, err := dialog.File().Filter("json/text file", "json", "txt").Load()
+		filename, err := dialog.File().Filter("json file", "json").Load()
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {

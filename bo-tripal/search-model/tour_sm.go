@@ -1,8 +1,9 @@
 package message
 
 import (
-	"github.com/common-go/search"
 	"time"
+
+	"github.com/common-go/search"
 )
 
 type TourSM struct {

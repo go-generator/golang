@@ -1,18 +1,15 @@
 package cache
 
 import (
-	"log"
 	"path/filepath"
-)
 
-const filePath = "./cache/cache.yaml"
+	"golang/code_generate_gui/working_directory"
+)
 
 var AbsPath = AbsPathCache()
 
 func AbsPathCache() string {
-	absPath, err := filepath.Abs(filePath)
-	if err != nil {
-		log.Println(err)
-	}
+	filePath := []string{working_directory.GetWorkingDirectory(), "cache", "cache.yaml"}
+	absPath := filepath.Join(filePath...)
 	return absPath
 }
