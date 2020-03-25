@@ -21,7 +21,6 @@ func DataTypeAbsPath() string {
 }
 
 func InitTypeMap() {
-	var typeMap map[string]string
 	viper.SetConfigName("data_type")
 	viper.AddConfigPath(DTypeAbsPath)
 	viper.AutomaticEnv()
@@ -30,7 +29,6 @@ func InitTypeMap() {
 		log.Println("Error while reading config file, " + err.Error())
 	}
 	err := viper.Unmarshal(&sqlTypeMap)
-	log.Println(typeMap)
 	if err != nil {
 		log.Println("Error while unmarshal file, " + err.Error())
 	}

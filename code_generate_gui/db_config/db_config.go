@@ -1,7 +1,6 @@
 package db_config
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/jinzhu/gorm"
@@ -10,6 +9,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/pkg/errors"
+	"golang/code_generate_gui/constants"
 )
 
 type DatabaseConfig struct {
@@ -57,15 +57,26 @@ func (dc *DatabaseConfig) SetHost(value string) {
 	dc.Host = value
 }
 
-func (dc *DatabaseConfig) SetPort(value string) {
-	var err error
-	dc.Port, err = strconv.Atoi(value)
-	if err != nil {
-		dc.Port = 0
-		log.Println(err)
-	}
-}
-
 func (dc *DatabaseConfig) SetDatabaseName(value string) {
 	dc.Database = value
+}
+
+func (dc *DatabaseConfig) ValidateDatabaseConfig() error {
+	var err error
+	if dc.Dialect == "" {
+		err = errors.New(constants.ErrInvDialect)
+	}
+	if dc.User == "" {
+		err = errors.New(constants.ErrInvUser)
+	}
+	if dc.Password == "" {
+		err = errors.New(constants.ErrInvPass)
+	}
+	if dc.Host == "" {
+		err = errors.New(constants.ErrInvAddr)
+	}
+	if dc.Database == "" {
+		err = errors.New(constants.ErrInvDBName)
+	}
+	return err
 }

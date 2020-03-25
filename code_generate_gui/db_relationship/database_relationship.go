@@ -16,6 +16,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
+	"golang/code_generate_gui/constants"
 	"golang/code_generate_gui/map_type"
 	"golang/code_generate_gui/utils"
 )
@@ -203,29 +204,10 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 	return err
 }
 
-func InputValidationAndExecute(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
-	if dc.Dialect == "" {
-		ShowWindows(app, "Error", "Invalid Dialect")
-		return
-	}
-	if dc.User == "" {
-		ShowWindows(app, "Error", "Invalid User")
-		return
-	}
-	if dc.Password == "" {
-		ShowWindows(app, "Error", "Invalid Password")
-		return
-	}
-	if dc.Host == "" {
-		ShowWindows(app, "Error", "Invalid Host Address")
-		return
-	}
-	if _, err := strconv.Atoi(strconv.Itoa(dc.Port)); err != nil {
-		ShowWindows(app, "Error", "Invalid Port")
-		return
-	}
-	if dc.Database == "" {
-		ShowWindows(app, "Error", "Invalid Database Name")
+func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
+	err := dc.ValidateDatabaseConfig()
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
 		return
 	}
 	filename, errFile := dialog.File().Filter("json files", "json").Title("Save As").Save()
@@ -234,7 +216,7 @@ func InputValidationAndExecute(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, 
 		return
 	}
 	rl, jt := DatabaseRelationships(*dc, conn)
-	err := JsonUI(env, filename+".json", conn, dc, rl, jt, optimize)
+	err = JsonUI(env, filename+".json", conn, dc, rl, jt, optimize)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
@@ -267,29 +249,48 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	hostEntry.OnChanged = dc.SetHost
 	hostEntry.Text = dc.Host
 	portEntry := widget.NewEntry()
-	portEntry.OnChanged = dc.SetPort
 	portEntry.Text = strconv.Itoa(dc.Port)
+	portEntry.OnChanged = func(s string) {
+		if s == "" {
+			return
+		}
+		temp, err := strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			ShowWindows(app, "Error", constants.ErrInvPort)
+			portEntry.SetText(strconv.Itoa(dc.Port))
+			return
+		}
+		if temp < 1 {
+			ShowWindows(app, "Error", constants.ErrInvPort)
+			portEntry.SetText(strconv.Itoa(dc.Port))
+			return
+		}
+		dc.Port = int(temp)
+		portEntry.SetText(strconv.Itoa(dc.Port))
+	}
 	databaseEntry := widget.NewEntry()
 	databaseEntry.OnChanged = dc.SetDatabaseName
 	databaseEntry.Text = dc.Database
 	executeButton := widget.NewButton("Generate Database Json Description", func() {
 		conn, err := dc.ConnectToSqlServer()
 		if err != nil {
-			log.Println(err)
+			ShowWindows(app, "Error", err.Error())
+			return
 		}
 		defer func() {
 			err = conn.Close()
 			if err != nil {
-				log.Println(err)
+				ShowWindows(app, "Error", err.Error())
 			}
 		}()
-		InputValidationAndExecute(app, dc, conn, opt)
+		WriteMetadata(app, dc, conn, opt)
 		if temp != *dc {
 			err := WriteCacheFile(cache, dc, encryptField)
 			if err != nil {
 				log.Println(err)
 			}
 		}
+		window.Close()
 	})
 	providerEntry := widget.NewRadio([]string{"mysql", "postgres", "mssql", "sqlite3"}, func(s string) {
 		dc.SetDialect(s)
@@ -319,9 +320,6 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 		widget.NewLabel("Database:"),
 		databaseEntry,
 		executeButton,
-		widget.NewButton("Quit", func() {
-			window.Close()
-		}),
 	))
 	window.CenterOnScreen()
 	return window
