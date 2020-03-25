@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sqweek/dialog"
 	"golang/code_generate_gui/db_relationship/common"
 )
 
@@ -85,6 +86,7 @@ func InputStringToInputStruct(guiInput string) string {
 	}
 	return ""
 }
+
 func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
 	output.RootPath = defaultRootPath
@@ -168,6 +170,7 @@ func FileNameConverter(s string, path string) string {
 	path = strings.ReplaceAll(path, "/", "_")
 	return s3[1:] + "_" + path + ".go"
 }
+
 func OutputStructToFiles(directory string) string {
 	//CREATE FOLDER ON DISK
 	if len(output.Files) == 0 {
@@ -220,10 +223,20 @@ func OutputStructToFiles(directory string) string {
 	wg.Wait()
 	return ""
 }
-func OutputStructToZip(directory string) string {
+func OutputStructToZip() string {
 	//TODO: Load output model for file
-	if len(output.Files) == 0 {
-		return "No File To Zip"
+	if output.Files == nil {
+		file, err := dialog.File().Filter("json file", "json").Load()
+		res := ""
+		if err != nil {
+			return err.Error()
+		}
+		GenerateFromFile(templateDir, projectName, file, &res)
+		//return "No File To Zip"
+	}
+	directory, err := dialog.File().Filter("zip file", "zip").Title("Export to zip").Save()
+	if err != nil {
+		return err.Error()
 	}
 	fileName := output.ProjectName
 	if directory != "" {
@@ -239,7 +252,7 @@ func OutputStructToZip(directory string) string {
 		if err != nil {
 			return err.Error()
 		}
-		output.RootPath += "/"
+		output.RootPath += string(os.PathSeparator)
 	}
 	tmp := filepath.Join([]string{".", "tmp.go"}...)
 	for i := range output.Files {
@@ -257,7 +270,7 @@ func OutputStructToZip(directory string) string {
 		}
 		output.Files[i].Content = string(formattedData)
 	}
-	err := os.Remove(tmp)
+	err = os.Remove(tmp)
 	if err != nil {
 		return err.Error()
 	}
@@ -271,6 +284,9 @@ func OutputStructToZip(directory string) string {
 		if err != nil {
 			return err.Error()
 		}
+		return ""
+	}()
+	defer func() string {
 		err = w.Close()
 		if err != nil {
 			return err.Error()
