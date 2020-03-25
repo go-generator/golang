@@ -221,6 +221,7 @@ func OutputStructToFiles(directory string) string {
 	return ""
 }
 func OutputStructToZip(directory string) string {
+	//TODO: Load output model for file
 	if len(output.Files) == 0 {
 		return "No File To Zip"
 	}
@@ -240,21 +241,9 @@ func OutputStructToZip(directory string) string {
 		}
 		output.RootPath += "/"
 	}
-	newZipFile, err := os.Create(output.RootPath + fileName + ".zip")
-	if err != nil {
-		return err.Error()
-	}
-	defer func() string {
-		err = newZipFile.Close()
-		if err != nil {
-			return err.Error()
-		}
-		return ""
-	}()
-	w := zip.NewWriter(newZipFile)
 	tmp := filepath.Join([]string{".", "tmp.go"}...)
 	for i := range output.Files {
-		err = ioutil.WriteFile(tmp, []byte(output.Files[i].Content), 0664)
+		err := ioutil.WriteFile(tmp, []byte(output.Files[i].Content), 0664)
 		if err != nil {
 			return err.Error()
 		}
@@ -268,10 +257,26 @@ func OutputStructToZip(directory string) string {
 		}
 		output.Files[i].Content = string(formattedData)
 	}
-	err = os.Remove(tmp)
+	err := os.Remove(tmp)
 	if err != nil {
 		return err.Error()
 	}
+	newZipFile, err := os.Create(output.RootPath + fileName + ".zip")
+	if err != nil {
+		return err.Error()
+	}
+	w := zip.NewWriter(newZipFile)
+	defer func() string {
+		err = newZipFile.Close()
+		if err != nil {
+			return err.Error()
+		}
+		err = w.Close()
+		if err != nil {
+			return err.Error()
+		}
+		return ""
+	}()
 	for i := range output.Files {
 		output.Files[i].Name = strings.TrimPrefix(output.Files[i].Name, "/")
 		f, err := w.Create(output.Files[i].Name)
@@ -283,11 +288,6 @@ func OutputStructToZip(directory string) string {
 			return err.Error()
 		}
 	}
-	err = w.Close()
-	if err != nil {
-		return err.Error()
-	}
-	//return "Zip created on disk"
 	return ""
 }
 func GenerateFromString(temp, project, guiInput string, outputString *string) string {
