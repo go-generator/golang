@@ -105,12 +105,12 @@ func StandardizeStructName(s string) string {
 
 func (m *ModelJSON) WritePackage(packageName string) {
 	m.WriteFile.WriteString("package " + packageName + "\n\n")
-	for _, v := range m.Fields {
-		if v.Type == "time.Time" {
-			m.WriteFile.WriteString("import \"time\"\n\n")
-			break
-		}
-	}
+	//for _, v := range m.Fields {
+	//	if v.Type == "time.Time" {
+	//		m.WriteFile.WriteString("import \"time\"\n\n")
+	//		break
+	//	}
+	//}
 }
 
 func (m *ModelJSON) WriteTypeAlias() {

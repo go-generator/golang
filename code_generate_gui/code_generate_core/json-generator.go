@@ -215,10 +215,6 @@ func OutputStructToFiles(directory string) string {
 			if err != nil {
 				log.Println(err)
 			}
-			_, err = common.ShellExecutor("gofmt", []string{"-w", dir})
-			if err != nil {
-				log.Println(err)
-			}
 		}(allFiles[i], &wg)
 	}
 	wg.Wait()
@@ -230,7 +226,7 @@ func OutputStructToZip(directory string) string {
 	}
 	fileName := output.ProjectName
 	if directory != "" {
-		tmp := strings.LastIndex(directory, "/")
+		tmp := strings.LastIndex(directory, string(os.PathSeparator))
 		fileName = directory[tmp+1:]
 		fileName = strings.TrimSuffix(fileName, ".zip")
 		if tmp != -1 {
@@ -244,7 +240,6 @@ func OutputStructToZip(directory string) string {
 		}
 		output.RootPath += "/"
 	}
-
 	newZipFile, err := os.Create(output.RootPath + fileName + ".zip")
 	if err != nil {
 		return err.Error()
@@ -257,8 +252,26 @@ func OutputStructToZip(directory string) string {
 		return ""
 	}()
 	w := zip.NewWriter(newZipFile)
+	tmp := filepath.Join([]string{".", "tmp.go"}...)
+	err = ioutil.WriteFile(tmp, nil, 0664)
+	if err != nil {
+		return err.Error()
+	}
 	for i := range output.Files {
 		output.Files[i].Name = strings.TrimPrefix(output.Files[i].Name, "/")
+		err = ioutil.WriteFile(tmp, []byte(output.Files[i].Content), 0664)
+		if err != nil {
+			return err.Error()
+		}
+		_, err = common.ShellExecutor("goimports", []string{"-w", tmp})
+		if err != nil {
+			return err.Error()
+		}
+		formattedData, err := ioutil.ReadFile(tmp)
+		if err != nil {
+			return err.Error()
+		}
+		output.Files[i].Content = string(formattedData)
 		f, err := w.Create(output.Files[i].Name)
 		if err != nil {
 			return err.Error()
@@ -267,6 +280,10 @@ func OutputStructToZip(directory string) string {
 		if err != nil {
 			return err.Error()
 		}
+	}
+	err = os.Remove(tmp)
+	if err != nil {
+		return err.Error()
 	}
 	err = w.Close()
 	if err != nil {

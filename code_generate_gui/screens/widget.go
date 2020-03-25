@@ -113,7 +113,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			err := code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result)
 			if err == "" {
 				largeText2.SetText(result)
-				cursorRow.SetText("OK")
+				cursorRow.SetText("Creating Files...")
 			} else {
 				cursorRow.SetText(err)
 				return
