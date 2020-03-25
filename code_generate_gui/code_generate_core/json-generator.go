@@ -211,7 +211,11 @@ func OutputStructToFiles(directory string) string {
 		wg.Add(1)
 		go func(dir string, wtg *sync.WaitGroup) {
 			defer wtg.Done()
-			_, err := common.ShellExecutor("gofmt", []string{"-w", dir})
+			_, err := common.ShellExecutor("goimports", []string{"-w", dir})
+			if err != nil {
+				log.Println(err)
+			}
+			_, err = common.ShellExecutor("gofmt", []string{"-w", dir})
 			if err != nil {
 				log.Println(err)
 			}
@@ -220,17 +224,17 @@ func OutputStructToFiles(directory string) string {
 	wg.Wait()
 	return ""
 }
-func OutputStructToZip(direc string) string {
+func OutputStructToZip(directory string) string {
 	if len(output.Files) == 0 {
 		return "No File To Zip"
 	}
 	fileName := output.ProjectName
-	if direc != "" {
-		tmp := strings.LastIndex(direc, "/")
-		fileName = direc[tmp+1:]
+	if directory != "" {
+		tmp := strings.LastIndex(directory, "/")
+		fileName = directory[tmp+1:]
 		fileName = strings.TrimSuffix(fileName, ".zip")
 		if tmp != -1 {
-			output.RootPath = direc[:tmp]
+			output.RootPath = directory[:tmp]
 		}
 	}
 	if output.RootPath != "" {
@@ -245,7 +249,13 @@ func OutputStructToZip(direc string) string {
 	if err != nil {
 		return err.Error()
 	}
-	defer newZipFile.Close()
+	defer func() string {
+		err = newZipFile.Close()
+		if err != nil {
+			return err.Error()
+		}
+		return ""
+	}()
 	w := zip.NewWriter(newZipFile)
 	for i := range output.Files {
 		output.Files[i].Name = strings.TrimPrefix(output.Files[i].Name, "/")

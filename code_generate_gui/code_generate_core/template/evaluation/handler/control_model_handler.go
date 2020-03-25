@@ -2,8 +2,9 @@ package handler
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type ControlModelHandler struct {

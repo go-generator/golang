@@ -2,7 +2,6 @@ package screens
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"../code_generate_core"
@@ -83,6 +82,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		directory, err := dialog.Directory().Title("Browse...").Browse()
 		if err != nil {
 			templateDir.SetText(err.Error())
+			return
 		}
 		templateDir.SetText(directory)
 	})
@@ -94,13 +94,10 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	largeText2 := widget.NewMultiLineEntry()
 	largeText2.SetPlaceHolder("Output")
 	cursorRow := widget.NewLabel("")
-
 	okButton := widget.NewButton("Code Generate", func() {
 		result := ""
 		err := code_generate_core.GenerateFromString(templateDir.Text, projectName.Text, largeText2.Text, &result)
 		if err == "" {
-			//largeText2.SetText(result)
-			//ShowWindows(app, "Output", largeText2.Text)
 			cursorRow.SetText("OK")
 		} else {
 			cursorRow.SetText(err)
@@ -110,6 +107,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		filename, err := dialog.File().Filter("json file", "json").Load()
 		if err != nil {
 			cursorRow.SetText(err.Error())
+			return
 		} else {
 			result := ""
 			err := code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result)
@@ -148,7 +146,6 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	})
 	zipAsButton := widget.NewButton("Save Zip As...", func() {
 		directory, err := dialog.File().Filter("ZIP files", "zip").Title("Export to ZIP").Save()
-		//directory, err := dialog.Directory().Title("Save Zip As...").Browse()
 		if err != nil {
 			cursorRow.SetText(err.Error())
 		} else {
@@ -165,7 +162,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 		if err == nil {
 			wi.Show()
 		} else {
-			log.Println(err)
+			cursorRow.SetText(err.Error())
 		}
 	})
 	list := widget.NewVBox()
@@ -175,11 +172,9 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	list.Append(saveButton)
 	list.Append(zipButton)
 	list.Append(openFileButton)
-	//list.Append(saveAsButton)
 	list.Append(zipAsButton)
 	list2.Append(projectName)
 	list2.Append(largeText)
-	//list2.Append(largeText2)
 	list.Append(modelJsonGenerator)
 	statusBar := widget.NewHBox(layout.NewSpacer(),
 		widget.NewLabel("Status:"), cursorRow,

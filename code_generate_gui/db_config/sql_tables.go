@@ -1,12 +1,9 @@
 package db_config
 
 import (
-	"log"
 	"strings"
 
-	. "../map_type"
 	"github.com/jinzhu/gorm"
-	"github.com/spf13/viper"
 )
 
 type SqlTable struct {
@@ -42,10 +39,6 @@ func (s *SqlTablesData) StandardizeFieldsName() {
 	}
 }
 
-func (s *SqlTablesData) InitSqlTablesData() {
-	s.InitTypeMap()
-}
-
 func (s *SqlTablesData) ResetData() {
 	s.SqlTable = nil
 	s.StructName = ""
@@ -53,43 +46,13 @@ func (s *SqlTablesData) ResetData() {
 	s.WriteFile.Reset()
 }
 
-func (s *SqlTablesData) InitTypeMap() {
-	viper.SetConfigName("data_type")
-	viper.AddConfigPath(DTypeAbsPath)
-	viper.AutomaticEnv()
-	viper.SetConfigType("yml")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Println("Error while reading config file, " + err.Error())
-	}
-	err := viper.Unmarshal(&s.TypeConvert)
-	log.Println(s.TypeConvert)
-	if err != nil {
-		log.Println("Error while unmarshal file, " + err.Error())
-	}
-}
-
 func (s *SqlTablesData) InitSqlTable(database string, tableName string, conn *gorm.DB) {
 	s.StructName = strings.Title(StandardizeName(tableName))
 	conn.Table("information_schema.columns").Select("*").Where("TABLE_SCHEMA= '" + database + "' AND TABLE_NAME = '" + tableName + "'").Scan(&s.SqlTable)
 }
 
-func (s *SqlTablesData) FreeResources() {
-	//for k := range s.TypeConvert {
-	//	delete(s.TypeConvert, k)
-	//}
-	s.TypeConvert = nil
-	log.Println("Resources are freed successfully")
-}
-
-func (s *SqlTablesData) WritePackage(packageName string) string {
+func (s *SqlTablesData) WritePackage(packageName string) {
 	s.WriteFile.WriteString("package " + packageName + "\n\n")
-	for _, v := range s.SqlTable {
-		if v.DataType == "date" || v.DataType == "timestamp" {
-			s.WriteFile.WriteString("import \"time\"\n\n")
-			break
-		}
-	}
-	return "package " + packageName + "\n\n"
 }
 
 func (s *SqlTablesData) WriteStruct() {

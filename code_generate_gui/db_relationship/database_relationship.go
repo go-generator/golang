@@ -16,6 +16,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
+	"golang/code_generate_gui/map_type"
 	"golang/code_generate_gui/utils"
 )
 
@@ -37,18 +38,20 @@ func DatabaseRelationships(dbConfig DatabaseConfig, conn *gorm.DB) ([]Relationsh
 }
 
 func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseConfig, rt []RelationshipTables) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
-	var s SqlTablesData
-	var files FilesDetails
+	var (
+		err    error
+		files  FilesDetails
+		entity []string
+	)
+	typeMap := map_type.RetrieveTypeMap()
 	files.Env = []string{"search_model", "config", "controller", "service/impl", "route", "service"}
 	var folderOutput Folders
-	var entity []string
 	if env == "" {
 		env = "model"
 	}
 	tables := ListAllTableNames(conn, dc.Database)
-	defer s.FreeResources() // Close connection before freeing resources
+	//defer s.FreeResources() // Close connection before freeing resources
 	files.Model = env
-	s.InitSqlTablesData()
 	path := "./" + output + "/"
 	fileDirectory := path + output + ".json"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -58,23 +61,27 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 		}
 	}
 	for _, v := range tables {
-		var m ModelJSON
+		var (
+			sqlTable SqlTablesData
+			m        ModelJSON
+		)
+		sqlTable.TypeConvert = utils.CopyMap(typeMap)
 		m.Name = v
-		s.InitSqlTable(dc.Database, v, conn)
-		s.StandardizeFieldsName()
-		for i, k := range s.SqlTable {
+		sqlTable.InitSqlTable(dc.Database, v, conn)
+		sqlTable.StandardizeFieldsName()
+		for i, k := range sqlTable.SqlTable {
 			var f FieldElements
-			if s.ContainCompositeKey {
-				f.Source = ToLower(s.GoFields[i])
+			if sqlTable.ContainCompositeKey {
+				f.Source = ToLower(sqlTable.GoFields[i])
 			} else {
 				if k.ColumnKey == "PRI" {
 					f.Source = "_id"
 				} else {
-					f.Source = ToLower(s.GoFields[i])
+					f.Source = ToLower(sqlTable.GoFields[i])
 				}
 			}
-			f.Type = s.TypeConvert[k.DataType]
-			f.Name = s.GoFields[i]
+			f.Type = sqlTable.TypeConvert[k.DataType]
+			f.Name = sqlTable.GoFields[i]
 			if k.ColumnKey == "PRI" {
 				f.PrimaryKey = true
 			} else {
@@ -102,7 +109,6 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 			m.Fields = append(m.Fields, f)
 		}
 		files.Files = append(files.Files, m)
-		s.ResetData() // Reuse Variable
 	}
 	for _, v := range files.Files {
 		entity = append(entity, StandardizeName(v.Name))
@@ -121,43 +127,41 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 }
 
 func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []RelationshipTables, jt []string, opt bool) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
-	var s SqlTablesData
-	var err error
-	var files FilesDetails
+	var (
+		err    error
+		files  FilesDetails
+		output Folders
+		entity []string
+	)
+	typeMap := map_type.RetrieveTypeMap()
 	files.Env = []string{"search_model", "config", "controller", "service/impl", "route", "service"}
-	var output Folders
-	var entity []string
 	tables := ListAllTableNames(conn, dc.Database)
-	defer s.FreeResources() // Close connection before freeing resources
-	defer func() {
-		err = conn.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	s.InitSqlTablesData()
 	files.Model = env
 	for _, v := range tables {
+		var (
+			sqlTable SqlTablesData
+			m        ModelJSON
+		)
+		sqlTable.TypeConvert = utils.CopyMap(typeMap)
 		if opt && utils.IsContainedInStrings(v, jt) { // Not generate model for many to many tables
 			continue
 		}
-		var m ModelJSON
 		m.Name = v
-		s.InitSqlTable(dc.Database, v, conn)
-		s.StandardizeFieldsName()
-		for i, v := range s.SqlTable {
+		sqlTable.InitSqlTable(dc.Database, v, conn)
+		sqlTable.StandardizeFieldsName()
+		for i, v := range sqlTable.SqlTable {
 			var f FieldElements
-			if s.ContainCompositeKey {
-				f.Source = ToLower(s.GoFields[i])
+			if sqlTable.ContainCompositeKey {
+				f.Source = ToLower(sqlTable.GoFields[i])
 			} else {
 				if v.ColumnKey == "PRI" {
 					f.Source = "_id"
 				} else {
-					f.Source = ToLower(s.GoFields[i])
+					f.Source = ToLower(sqlTable.GoFields[i])
 				}
 			}
-			f.Name = s.GoFields[i]
-			f.Type = s.TypeConvert[v.DataType]
+			f.Name = sqlTable.GoFields[i]
+			f.Type = sqlTable.TypeConvert[v.DataType]
 			if v.ColumnKey == "PRI" {
 				f.PrimaryKey = true
 			} else {
@@ -174,19 +178,14 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
-					//foreign.ForeignKey = rl.Column
 					relationship.Ref.RefCols = append(relationship.Ref.RefCols, rl.Column)
 					m.Relationships = append(m.Relationships, relationship)
 					m.Fields = append(m.Fields, foreign)
 				}
-				//if rl.Relationship == ManyToOne {
-				//	f.ForeignKey = rl.ReferencedTable
-				//}
 			}
 			m.Fields = append(m.Fields, f)
 		}
 		files.Files = append(files.Files, m)
-		s.ResetData() // Reuse Variable
 	}
 	for _, v := range files.Files {
 		entity = append(entity, StandardizeName(v.Name))
