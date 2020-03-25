@@ -253,12 +253,7 @@ func OutputStructToZip(directory string) string {
 	}()
 	w := zip.NewWriter(newZipFile)
 	tmp := filepath.Join([]string{".", "tmp.go"}...)
-	err = ioutil.WriteFile(tmp, nil, 0664)
-	if err != nil {
-		return err.Error()
-	}
 	for i := range output.Files {
-		output.Files[i].Name = strings.TrimPrefix(output.Files[i].Name, "/")
 		err = ioutil.WriteFile(tmp, []byte(output.Files[i].Content), 0664)
 		if err != nil {
 			return err.Error()
@@ -272,6 +267,13 @@ func OutputStructToZip(directory string) string {
 			return err.Error()
 		}
 		output.Files[i].Content = string(formattedData)
+	}
+	err = os.Remove(tmp)
+	if err != nil {
+		return err.Error()
+	}
+	for i := range output.Files {
+		output.Files[i].Name = strings.TrimPrefix(output.Files[i].Name, "/")
 		f, err := w.Create(output.Files[i].Name)
 		if err != nil {
 			return err.Error()
@@ -280,10 +282,6 @@ func OutputStructToZip(directory string) string {
 		if err != nil {
 			return err.Error()
 		}
-	}
-	err = os.Remove(tmp)
-	if err != nil {
-		return err.Error()
 	}
 	err = w.Close()
 	if err != nil {
