@@ -10,24 +10,25 @@ import (
 )
 
 type FilesDetails struct {
-	Env    []string    `json:"env"`
-	Entity []string    `json:"entity"`
-	Model  string      `json:"model"`
-	Files  []ModelJSON `json:"files"`
+	Env    []string `json:"env"`
+	Entity []string `json:"entity"`
+	Model  string   `json:"model"`
+	Files  []Model  `json:"files"`
 }
 
 type Folders struct {
 	ModelFile []FilesDetails `json:"folders"`
 }
 
-type ModelJSON struct {
-	Name          string          `json:"name"`
-	Source        string          `json:"source"`
-	ConstValue    []Const         `json:"const"`
-	TypeAlias     []TypeAlias     `json:"type_alias"`
-	Relationships []Relationship  `json:"arrays"`
-	Fields        []FieldElements `json:"fields"`
-	WriteFile     strings.Builder `json:"-"`
+type Model struct {
+	Name       string          `json:"name"`
+	Source     string          `json:"source"`
+	ConstValue []Const         `json:"const"`
+	TypeAlias  []TypeAlias     `json:"type_alias"`
+	Models     []Relationship  `json:"models"`
+	Arrays     []Relationship  `json:"arrays"`
+	Fields     []Field         `json:"fields"`
+	WriteFile  strings.Builder `json:"-"`
 }
 
 type Const struct {
@@ -41,19 +42,19 @@ type TypeAlias struct {
 	Type string `json:"type"`
 }
 
-type FieldElements struct {
-	Name       string `json:"name"`
-	Source     string `json:"source"`
-	Type       string `json:"type"`
+type Field struct {
+	Name       string `json:"name,omitempty"`
+	Source     string `json:"source,omitempty"`
+	Type       string `json:"type,omitempty"`
 	PrimaryKey bool   `json:"primaryKey,omitempty"`
 }
 
 type Relationship struct {
-	Table  string  `json:"table"`
-	Fields []Field `json:"fields"`
+	Ref    string `json:"table"`
+	Fields []Link `json:"fields"`
 }
 
-func (m *ModelJSON) ExtractFieldType() map[string]string {
+func (m *Model) ExtractFieldType() map[string]string {
 	res := make(map[string]string)
 	for _, v := range m.Fields {
 		res[v.Name] = v.Type
@@ -64,12 +65,12 @@ func (m *ModelJSON) ExtractFieldType() map[string]string {
 type Connection struct {
 	TableName       string
 	ReferencedTable string
-	Fields          []Field
+	Fields          []Link
 }
 
-type Field struct {
-	ColumnName       string `json:"column"`
-	ReferencedColumn string `json:"ref"`
+type Link struct {
+	Column string `json:"column"`
+	Ref    string `json:"ref"`
 }
 
 type JavaComPK struct {

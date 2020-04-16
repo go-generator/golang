@@ -49,13 +49,13 @@ type ErrorMessage struct {
 	Message string `json:"message,omitempty" bson:"message,omitempty" gorm:"column:message"`
 }
 
-type ModelJSON struct {
-	Env        string          `json:"env"`
-	Name       string          `json:"name"`
-	Source     string          `json:"source"`
-	ConstValue []Const         `json:"const"`
-	TypeAlias  []TypeAlias     `json:"type_alias"`
-	Fields     []FieldElements `json:"fields"`
+type Model struct {
+	Env        string      `json:"env"`
+	Name       string      `json:"name"`
+	Source     string      `json:"source"`
+	ConstValue []Const     `json:"const"`
+	TypeAlias  []TypeAlias `json:"type_alias"`
+	Fields     []Field     `json:"fields"`
 }
 type Const struct {
 	Name  string      `json:"name"`
@@ -68,7 +68,7 @@ type TypeAlias struct {
 	Type string `json:"type"`
 }
 
-type FieldElements struct {
+type Field struct {
 	Name       string `json:"name"`
 	Source     string `json:"source"`
 	Type       string `json:"type"`
@@ -172,9 +172,9 @@ func ReadSchemaFromMongo() error {
 	if err != nil {
 		return err
 	}
-	r := []ModelJSON{}
+	r := []Model{}
 	for result.Next(ctx) {
-		ri := ModelJSON{}
+		ri := Model{}
 		err = result.Decode(&ri)
 		if err != nil {
 			return err

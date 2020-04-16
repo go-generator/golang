@@ -70,14 +70,14 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 	for _, v := range tables {
 		var (
 			sqlTable SqlTablesData
-			m        ModelJSON
+			m        Model
 		)
 		sqlTable.TypeConvert = map_type.RetrieveTypeMap()
 		m.Name = v
 		sqlTable.InitSqlTable(dc.Database, v, conn)
 		sqlTable.StandardizeFieldsName()
 		for i, k := range sqlTable.SqlTable {
-			var f FieldElements
+			var f Field
 			if sqlTable.ContainCompositeKey {
 				f.Source = ToLower(sqlTable.GoFields[i])
 			} else {
@@ -96,18 +96,18 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 			}
 			rl := GetRelationship(k.ColumnName, rt)
 			if rl != nil {
-				var foreign FieldElements
+				var foreign Field
 				if rl.Relationship == ManyToOne && k.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
 					var relationship Relationship
-					relationship.Table = k.TableName
+					relationship.Ref = k.TableName
 					foreign.Name = StandardizeName(rl.Table)
 					foreign.Source = rl.Table
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
-					relationship.Fields = append(relationship.Fields, Field{
-						ColumnName:       rl.Column,
-						ReferencedColumn: rl.ReferencedColumn,
+					relationship.Fields = append(relationship.Fields, Link{
+						Column: rl.Column,
+						Ref:    rl.ReferencedColumn,
 					})
-					m.Relationships = append(m.Relationships, relationship)
+					m.Arrays = append(m.Arrays, relationship)
 					m.Fields = append(m.Fields, foreign)
 				}
 			}
@@ -145,7 +145,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 	for _, v := range tables {
 		var (
 			sqlTable SqlTablesData
-			m        ModelJSON
+			m        Model
 		)
 		sqlTable.TypeConvert = utils.CopyMap(typeMap)
 		if opt && utils.IsContainedInStrings(v, jt) { // Not generate model for many to many tables
@@ -155,7 +155,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 		sqlTable.InitSqlTable(dc.Database, v, conn)
 		sqlTable.StandardizeFieldsName()
 		for i, v := range sqlTable.SqlTable {
-			var f FieldElements
+			var f Field
 			if sqlTable.ContainCompositeKey {
 				f.Source = ToLower(sqlTable.GoFields[i])
 			} else {
@@ -173,26 +173,26 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 			rl := GetRelationship(v.ColumnName, rt)
 			if rl != nil {
 				var relationship Relationship
-				var foreign FieldElements
+				var foreign Field
 				foreign.Name = StandardizeName(rl.Table)
 				foreign.Source = rl.Table
 				foreign.Type = "*[]" + StandardizeName(rl.Table)
 				if rl.Relationship == ManyToOne && v.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
-					relationship.Table = rl.Table
-					relationship.Fields = append(relationship.Fields, Field{
-						ColumnName:       rl.Column,
-						ReferencedColumn: rl.ReferencedColumn,
+					relationship.Ref = rl.Table
+					relationship.Fields = append(relationship.Fields, Link{
+						Column: rl.Column,
+						Ref:    rl.ReferencedColumn,
 					})
-					if m.Relationships == nil {
-						m.Relationships = append(m.Relationships, relationship)
+					if m.Arrays == nil {
+						m.Arrays = append(m.Arrays, relationship)
 					} else {
-						for j := range m.Relationships {
-							if m.Relationships[j].Table == relationship.Table {
-								m.Relationships[j].Fields = append(m.Relationships[j].Fields, relationship.Fields...)
+						for j := range m.Arrays {
+							if m.Arrays[j].Ref == relationship.Ref {
+								m.Arrays[j].Fields = append(m.Arrays[j].Fields, relationship.Fields...)
 								break
 							}
-							if j == len(m.Relationships)-1 {
-								m.Relationships = append(m.Relationships, relationship)
+							if j == len(m.Arrays)-1 {
+								m.Arrays = append(m.Arrays, relationship)
 							}
 						}
 					}
@@ -372,17 +372,17 @@ func JavaUI() error {
 func GetConnection(output *Folders) []Connection {
 	var connection []Connection
 	for _, v := range output.ModelFile[0].Files {
-		if v.Relationships != nil {
-			for _, v1 := range v.Relationships {
+		if v.Arrays != nil {
+			for _, v1 := range v.Arrays {
 				tmp := Connection{
 					TableName:       v.Name,
-					ReferencedTable: v1.Table,
+					ReferencedTable: v1.Ref,
 					Fields:          nil,
 				}
 				for _, v2 := range v1.Fields {
-					field := Field{
-						ColumnName:       v2.ColumnName,
-						ReferencedColumn: v2.ReferencedColumn,
+					field := Link{
+						Column: v2.Column,
+						Ref:    v2.Ref,
 					}
 					tmp.Fields = append(tmp.Fields, field)
 				}
@@ -489,8 +489,8 @@ func WriteJavaFiles(output Folders, filePath string) error {
 				}
 				for index2 := range connection[index].Fields {
 					joinColumn := ColumnRef{
-						Col:           connection[index].Fields[index2].ColumnName,
-						ReferencedCol: connection[index].Fields[index2].ReferencedColumn,
+						Col:           connection[index].Fields[index2].Column,
+						ReferencedCol: connection[index].Fields[index2].Ref,
 					}
 					tableRef.JoinColumns = append(tableRef.JoinColumns, joinColumn)
 				}
@@ -521,7 +521,7 @@ func WriteJavaFiles(output Folders, filePath string) error {
 	return err
 }
 
-func GetCompositeKeys(modelJSON ModelJSON) []string {
+func GetCompositeKeys(modelJSON Model) []string {
 	count := 0
 	pri := make([]string, 0)
 	for _, v := range modelJSON.Fields {
