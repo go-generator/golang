@@ -246,26 +246,6 @@ func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize boo
 	ShowWindows(app, "Success", "Generated Database Json File Successfully")
 }
 
-//func WriteJavaMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
-//	err := dc.ValidateDatabaseConfig()
-//	if err != nil {
-//		ShowWindows(app, "Error", err.Error())
-//		return
-//	}
-//	javaPath, err := dialog.Directory().Title("Java files path").Browse()
-//	if err != nil {
-//		ShowWindows(app, "Error", err.Error())
-//		return
-//	}
-//	rl, jt := DatabaseRelationships(dc, conn)
-//	err = JavaUI(env, javaPath, conn, dc, rl, jt, optimize)
-//	if err != nil {
-//		ShowWindows(app, "Error", err.Error())
-//		return
-//	}
-//	ShowWindows(app, "Success", "Generated Database Java Files Successfully")
-//}
-
 func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.Window {
 	var temp DatabaseConfig
 	err := ReadCacheFile(cache, &temp, encryptField)
@@ -296,18 +276,18 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 		if s == "" {
 			return
 		}
-		temp, err := strconv.ParseInt(s, 10, 32)
+		tmp, err := strconv.ParseInt(s, 10, 32)
 		if err != nil {
 			ShowWindows(app, "Error", constants.ErrInvPort)
 			portEntry.SetText(strconv.Itoa(dc.Port))
 			return
 		}
-		if temp < 1 {
+		if tmp < 1 {
 			ShowWindows(app, "Error", constants.ErrInvPort)
 			portEntry.SetText(strconv.Itoa(dc.Port))
 			return
 		}
-		dc.Port = int(temp)
+		dc.Port = int(tmp)
 		portEntry.SetText(strconv.Itoa(dc.Port))
 	}
 	databaseEntry := widget.NewEntry()
@@ -367,107 +347,6 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	return window
 }
 
-//func JavaInputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.Window {
-//	var temp DatabaseConfig
-//	err := ReadCacheFile(cache, &temp, encryptField)
-//	if err != nil {
-//		log.Println(err)
-//	}
-//	window := app.NewWindow("Database Java Files Generator")
-//	window.Resize(fyne.Size{
-//		Width: 640,
-//	})
-//	var opt bool
-//	optimizeEntry := widget.NewCheck("Optimization", func(b bool) {
-//		opt = b
-//	})
-//	usernameEntry := widget.NewEntry()
-//	usernameEntry.OnChanged = dc.SetUsername
-//	usernameEntry.Text = dc.User
-//	passwordEntry := widget.NewEntry()
-//	passwordEntry.OnChanged = dc.SetPassword
-//	passwordEntry.Text = dc.Password
-//	passwordEntry.Password = true
-//	hostEntry := widget.NewEntry()
-//	hostEntry.OnChanged = dc.SetHost
-//	hostEntry.Text = dc.Host
-//	portEntry := widget.NewEntry()
-//	portEntry.Text = strconv.Itoa(dc.Port)
-//	portEntry.OnChanged = func(s string) {
-//		if s == "" {
-//			return
-//		}
-//		temp, err := strconv.ParseInt(s, 10, 32)
-//		if err != nil {
-//			ShowWindows(app, "Error", constants.ErrInvPort)
-//			portEntry.SetText(strconv.Itoa(dc.Port))
-//			return
-//		}
-//		if temp < 1 {
-//			ShowWindows(app, "Error", constants.ErrInvPort)
-//			portEntry.SetText(strconv.Itoa(dc.Port))
-//			return
-//		}
-//		dc.Port = int(temp)
-//		portEntry.SetText(strconv.Itoa(dc.Port))
-//	}
-//	databaseEntry := widget.NewEntry()
-//	databaseEntry.OnChanged = dc.SetDatabaseName
-//	databaseEntry.Text = dc.Database
-//	executeButton := widget.NewButton("Generate Database Java Description", func() {
-//		conn, err := dc.ConnectToSqlServer()
-//		if err != nil {
-//			ShowWindows(app, "Error", err.Error())
-//			return
-//		}
-//		defer func() {
-//			err = conn.Close()
-//			if err != nil {
-//				ShowWindows(app, "Error", err.Error())
-//			}
-//		}()
-//		WriteJavaMetadata(app, dc, conn, opt)
-//		if temp != *dc {
-//			err := WriteCacheFile(cache, dc, encryptField)
-//			if err != nil {
-//				log.Println(err)
-//			}
-//		}
-//		window.Close()
-//	})
-//	providerEntry := widget.NewRadio([]string{"mysql", "postgres", "mssql", "sqlite3"}, func(s string) {
-//		dc.SetDialect(s)
-//	})
-//	providerEntry.Selected = dc.Dialect
-//	providerEntry.Refresh()
-//	window.SetContent(widget.NewVBox(
-//		optimizeEntry,
-//		widget.NewLabel("Provider:"),
-//		providerEntry,
-//		widget.NewLabel("User:"),
-//		usernameEntry,
-//		widget.NewCheck("Show Password", func(b bool) {
-//			if b {
-//				passwordEntry.Password = false
-//			} else {
-//				passwordEntry.Password = true
-//			}
-//			passwordEntry.Refresh()
-//		}),
-//		widget.NewLabel("Password:"),
-//		passwordEntry,
-//		widget.NewLabel("Host:"),
-//		hostEntry,
-//		widget.NewLabel("Port:"),
-//		portEntry,
-//		widget.NewLabel("Database:"),
-//		databaseEntry,
-//		executeButton,
-//	))
-//	window.CenterOnScreen()
-//	return window
-//}
-
 func JavaUI() error {
 	var output Folders
 	file, err := dialog.File().Title("Select json").Filter("json file", "json").Load()
@@ -486,89 +365,12 @@ func JavaUI() error {
 	if err != nil {
 		return err
 	}
-	//var (
-	//	err    error
-	//	files  FilesDetails
-	//	output Folders
-	//	entity []string
-	//)
-	//typeMap := map_type.RetrieveTypeMap()
-	//files.Env = []string{"search_model", "config", "controller", "service/impl", "route", "service"}
-	//tables := ListAllTableNames(conn, dc.Database, dc.Dialect)
-	//files.Model = env
-	//for _, v := range tables {
-	//	var (
-	//		sqlTable SqlTablesData
-	//		m        ModelJSON
-	//	)
-	//	sqlTable.TypeConvert = utils.CopyMap(typeMap)
-	//	if opt && utils.IsContainedInStrings(v, jt) { // Not generate model for many to many tables
-	//		continue
-	//	}
-	//	m.Name = v
-	//	sqlTable.InitSqlTable(dc.Database, v, conn)
-	//	sqlTable.StandardizeFieldsName()
-	//	for i, v := range sqlTable.SqlTable {
-	//		var f FieldElements
-	//		if sqlTable.ContainCompositeKey {
-	//			f.Source = ToLower(sqlTable.GoFields[i])
-	//		} else {
-	//			if v.ColumnKey == "PRI" {
-	//				f.Source = "_id"
-	//			} else {
-	//				f.Source = ToLower(sqlTable.GoFields[i])
-	//			}
-	//		}
-	//		f.Name = sqlTable.GoFields[i]
-	//		f.Type = sqlTable.TypeConvert[v.DataType]
-	//		if v.ColumnKey == "PRI" {
-	//			f.PrimaryKey = true
-	//		} else {
-	//			f.PrimaryKey = false
-	//		}
-	//		rl := GetRelationship(v.ColumnName, rt)
-	//		if rl != nil {
-	//			log.Println(rl)
-	//			var relationship Relationship
-	//			var foreign FieldElements
-	//			if rl.Relationship == ManyToOne && v.TableName == rl.ReferencedTable { // Have Many to One relation, add a field to the current struct
-	//				relationship.Table = rl.Table
-	//				foreign.Name = StandardizeName(rl.Table)
-	//				foreign.Source = rl.Table
-	//				foreign.Type = "*[]" + StandardizeName(rl.Table)
-	//				relationship.Fields = append(relationship.Fields, Field{
-	//					ColumnName:       rl.Column,
-	//					ReferencedColumn: rl.ReferencedColumn,
-	//				})
-	//				m.Relationships = append(m.Relationships, relationship)
-	//				m.Fields = append(m.Fields, foreign)
-	//			}
-	//		}
-	//		m.Fields = append(m.Fields, f)
-	//	}
-	//	files.Files = append(files.Files, m)
-	//}
-	//for _, v := range files.Files {
-	//	entity = append(entity, StandardizeName(v.Name))
-	//}
-	//files.Entity = entity
-	//output.ModelFile = append(output.ModelFile, files)
 	err = WriteJavaFiles(output, outFolder)
-	//TODO: Write Java files from output
-	//data, err := json.MarshalIndent(&output, "", " ")
-	//if err != nil {
-	//	return err
-	//}
-	//err = ioutil.WriteFile(filePath, data, 0644) // Create and write files
 	return err
 }
 
-//TODO: Write Java files
-
-func WriteJavaFiles(output Folders, filePath string) error {
+func GetConnection(output *Folders) []Connection {
 	var connection []Connection
-	//tables := ListAllTableNames(conn, dc.Database, dc.Dialect)
-	//rl, _ := DatabaseRelationships(dc, conn)
 	for _, v := range output.ModelFile[0].Files {
 		if v.Relationships != nil {
 			for _, v1 := range v.Relationships {
@@ -588,69 +390,7 @@ func WriteJavaFiles(output Folders, filePath string) error {
 			}
 		}
 	}
-	for i := range output.ModelFile[0].Entity {
-		fields := GetValueColumns(output, output.ModelFile[0].Entity[i])
-		priCols := GetAllPrimaryKeys(output, output.ModelFile[0].Entity[i])
-		javaData := NewJavaTemplate(output.ModelFile[0].Model, output.ModelFile[0].Entity[i],
-			priCols,
-			fields,
-		)
-		for index := range connection {
-			if StandardizeName(connection[index].TableName) == StandardizeName(javaData.TableName) {
-				tableRef := TableRef{
-					Name:        "",
-					JoinColumns: nil,
-				}
-				for index2 := range connection[index].Fields {
-					joinColumn := ColumnRef{
-						Col:           connection[index].Fields[index2].ColumnName,
-						ReferencedCol: connection[index].Fields[index2].ReferencedColumn,
-					}
-					tableRef.JoinColumns = append(tableRef.JoinColumns, joinColumn)
-				}
-				tableRef.Name = StandardizeName(connection[index].ReferencedTable)
-				javaData.TableRef = append(javaData.TableRef, tableRef)
-				break
-			}
-		}
-		jTmplFile := filepath.Join(JavaTemplateDir, "java_template.tmpl")
-		jTmplOtmFile := filepath.Join(JavaTemplateDir, "java_template_otm.tmpl")
-		tmplPKFile := filepath.Join(JavaTemplateDir, "java_pk.tmpl")
-		if len(javaData.IDFields) > 1 {
-			data := NewJavaComPK(javaData.Package, javaData.TableName+"PK", javaData.IDFields)
-			err := ParseJavaTemplate(tmplPKFile, filePath, javaData.TableName, data)
-			if err != nil {
-				return err
-			}
-		}
-		if javaData.TableRef != nil {
-			err := ParseJavaTemplate(jTmplOtmFile, filePath, javaData.TableName, javaData)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := ParseJavaTemplate(jTmplFile, filePath, javaData.TableName, javaData)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func GetCompositeKeys(modelJSON ModelJSON) []string {
-	count := 0
-	pri := make([]string, 0)
-	for _, v := range modelJSON.Fields {
-		if v.PrimaryKey {
-			count++
-			pri = append(pri, v.Name)
-		}
-	}
-	if count > 1 {
-		return pri
-	}
-	return nil
+	return connection
 }
 
 func ParseJavaTemplate(jTmplFilePath, jOutput, tableName string, javaTemplate interface{}) error {
@@ -723,4 +463,75 @@ func GetAllPrimaryKeys(output Folders, table string) []string {
 		}
 	}
 	return res
+}
+
+func WriteJavaFiles(output Folders, filePath string) error {
+	var err error
+	jTmplFile := filepath.Join(JavaTemplateDir, "java_template.tmpl")
+	jTmplOtmFile := filepath.Join(JavaTemplateDir, "java_template_otm.tmpl")
+	tmplPKFile := filepath.Join(JavaTemplateDir, "java_pk.tmpl")
+	connection := GetConnection(&output)
+	//tables := ListAllTableNames(conn, dc.Database, dc.Dialect)
+	//rl, _ := DatabaseRelationships(dc, conn)
+	for i := range output.ModelFile[0].Entity {
+		fields := GetValueColumns(output, output.ModelFile[0].Entity[i])
+		priCols := GetAllPrimaryKeys(output, output.ModelFile[0].Entity[i])
+		javaData := NewJavaTemplate(output.ModelFile[0].Model,
+			output.ModelFile[0].Entity[i],
+			priCols,
+			fields,
+		)
+		for index := range connection {
+			if StandardizeName(connection[index].TableName) == StandardizeName(javaData.TableName) {
+				tableRef := TableRef{
+					Name:        "",
+					JoinColumns: nil,
+				}
+				for index2 := range connection[index].Fields {
+					joinColumn := ColumnRef{
+						Col:           connection[index].Fields[index2].ColumnName,
+						ReferencedCol: connection[index].Fields[index2].ReferencedColumn,
+					}
+					tableRef.JoinColumns = append(tableRef.JoinColumns, joinColumn)
+				}
+				tableRef.Name = StandardizeName(connection[index].ReferencedTable)
+				javaData.TableRef = append(javaData.TableRef, tableRef)
+				break
+			}
+		}
+		if len(javaData.IDFields) > 1 {
+			data := NewJavaComPK(javaData.Package, javaData.TableName+"PK", javaData.IDFields)
+			err = ParseJavaTemplate(tmplPKFile, filePath, javaData.TableName, data)
+			if err != nil {
+				return err
+			}
+		}
+		if javaData.TableRef != nil {
+			err = ParseJavaTemplate(jTmplOtmFile, filePath, javaData.TableName, javaData)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = ParseJavaTemplate(jTmplFile, filePath, javaData.TableName, javaData)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return err
+}
+
+func GetCompositeKeys(modelJSON ModelJSON) []string {
+	count := 0
+	pri := make([]string, 0)
+	for _, v := range modelJSON.Fields {
+		if v.PrimaryKey {
+			count++
+			pri = append(pri, v.Name)
+		}
+	}
+	if count > 1 {
+		return pri
+	}
+	return nil
 }
