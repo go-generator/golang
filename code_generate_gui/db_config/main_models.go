@@ -43,10 +43,10 @@ type TypeAlias struct {
 }
 
 type Field struct {
-	Name       string `json:"name,omitempty"`
-	Source     string `json:"source,omitempty"`
-	Type       string `json:"type,omitempty"`
-	PrimaryKey bool   `json:"primaryKey,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Source string `json:"source,omitempty"`
+	Type   string `json:"type,omitempty"`
+	Id     bool   `json:"primaryKey,omitempty"`
 }
 
 type Relationship struct {

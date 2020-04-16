@@ -90,9 +90,9 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 			f.Type = sqlTable.TypeConvert[k.DataType]
 			f.Name = sqlTable.GoFields[i]
 			if k.ColumnKey == "PRI" {
-				f.PrimaryKey = true
+				f.Id = true
 			} else {
-				f.PrimaryKey = false
+				f.Id = false
 			}
 			rl := GetRelationship(k.ColumnName, rt)
 			if rl != nil {
@@ -168,7 +168,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 			f.Name = sqlTable.GoFields[i]
 			f.Type = sqlTable.TypeConvert[v.DataType]
 			if v.ColumnKey == "PRI" {
-				f.PrimaryKey = true
+				f.Id = true
 			}
 			rl := GetRelationship(v.ColumnName, rt)
 			if rl != nil {
@@ -440,7 +440,7 @@ func GetValueColumns(output Folders, table string) []string {
 	for _, v := range output.ModelFile[0].Files {
 		if StandardizeName(v.Name) == table {
 			for _, v1 := range v.Fields {
-				if !v1.PrimaryKey && !common.IsExisted(StandardizeName(v1.Name), output.ModelFile[0].Entity) {
+				if !v1.Id && !common.IsExisted(StandardizeName(v1.Name), output.ModelFile[0].Entity) {
 					res = append(res, ToLower(v1.Name))
 				}
 			}
@@ -455,7 +455,7 @@ func GetAllPrimaryKeys(output Folders, table string) []string {
 	for _, v := range output.ModelFile[0].Files {
 		if StandardizeName(v.Name) == table {
 			for _, v1 := range v.Fields {
-				if v1.PrimaryKey {
+				if v1.Id {
 					res = append(res, ToLower(v1.Name))
 				}
 			}
@@ -525,7 +525,7 @@ func GetCompositeKeys(modelJSON Model) []string {
 	count := 0
 	pri := make([]string, 0)
 	for _, v := range modelJSON.Fields {
-		if v.PrimaryKey {
+		if v.Id {
 			count++
 			pri = append(pri, v.Name)
 		}
