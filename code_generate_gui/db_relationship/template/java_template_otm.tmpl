@@ -25,6 +25,7 @@ public class {{.TableName | ToTitle}} {
      public String get{{$element | ToTitle}}() {
          return {{$element}};
      }
+
      public void set{{$element | ToTitle}}(String value) {
          this.{{$element}} = value;
      }{{end}}

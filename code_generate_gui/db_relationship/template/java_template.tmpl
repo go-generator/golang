@@ -5,8 +5,7 @@ import java.lang.String;
 
 @Entity
 {{.IDClass}}
-public class {{.TableName | ToTitle}} {
-     {{range $element := .IDFields}}
+public class {{.TableName | ToTitle}} { {{range $element := .IDFields}}
      @Id
      @Column(name = "{{$element | ToLower}}")
      private String {{$element}};
@@ -14,6 +13,7 @@ public class {{.TableName | ToTitle}} {
      public String get{{$element | ToTitle}}() {
           return {{$element}};
      }
+
      public void set{{$element | ToTitle}}(String value) {
           this.{{$element}} = value;
      }{{end}}
@@ -24,9 +24,11 @@ public class {{.TableName | ToTitle}} {
      public String get{{$element | ToTitle}}() {
          return {{$element}};
      }
+
      public void set{{$element | ToTitle}}(String value) {
          this.{{$element}} = value;
      }{{end}}
+
      public {{.TableName | ToTitle}}() {
      }
 }

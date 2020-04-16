@@ -588,7 +588,7 @@ func WriteJavaFiles(output Folders, filePath string) error {
 			}
 		}
 	}
-	for i := range output.ModelFile[0].Files {
+	for i := range output.ModelFile[0].Entity {
 		fields := GetValueColumns(output, output.ModelFile[0].Entity[i])
 		priCols := GetAllPrimaryKeys(output, output.ModelFile[0].Entity[i])
 		javaData := NewJavaTemplate(output.ModelFile[0].Model, output.ModelFile[0].Entity[i],
@@ -596,28 +596,33 @@ func WriteJavaFiles(output Folders, filePath string) error {
 			fields,
 		)
 		for index := range connection {
-			for j := range output.ModelFile[0].Entity {
-				if StandardizeName(connection[index].TableName) == output.ModelFile[0].Entity[j] {
-					tableRef := TableRef{
-						Name:        "",
-						JoinColumns: nil,
-					}
-					for index2 := range connection[index].Fields {
-						joinColumn := ColumnRef{
-							Col:           connection[index].Fields[index2].ColumnName,
-							ReferencedCol: connection[index].Fields[index2].ReferencedColumn,
-						}
-						tableRef.JoinColumns = append(tableRef.JoinColumns, joinColumn)
-					}
-					tableRef.Name = StandardizeName(connection[index].ReferencedTable)
-					javaData.TableRef = append(javaData.TableRef, tableRef)
-					break
+			if StandardizeName(connection[index].TableName) == StandardizeName(javaData.TableName) {
+				tableRef := TableRef{
+					Name:        "",
+					JoinColumns: nil,
 				}
+				for index2 := range connection[index].Fields {
+					joinColumn := ColumnRef{
+						Col:           connection[index].Fields[index2].ColumnName,
+						ReferencedCol: connection[index].Fields[index2].ReferencedColumn,
+					}
+					tableRef.JoinColumns = append(tableRef.JoinColumns, joinColumn)
+				}
+				tableRef.Name = StandardizeName(connection[index].ReferencedTable)
+				javaData.TableRef = append(javaData.TableRef, tableRef)
+				break
 			}
 		}
 		jTmplFile := filepath.Join(JavaTemplateDir, "java_template.tmpl")
 		jTmplOtmFile := filepath.Join(JavaTemplateDir, "java_template_otm.tmpl")
 		tmplPKFile := filepath.Join(JavaTemplateDir, "java_pk.tmpl")
+		if len(javaData.IDFields) > 1 {
+			data := NewJavaComPK(javaData.Package, javaData.TableName+"PK", javaData.IDFields)
+			err := ParseJavaTemplate(tmplPKFile, filePath, javaData.TableName, data)
+			if err != nil {
+				return err
+			}
+		}
 		if javaData.TableRef != nil {
 			err := ParseJavaTemplate(jTmplOtmFile, filePath, javaData.TableName, javaData)
 			if err != nil {
@@ -625,13 +630,6 @@ func WriteJavaFiles(output Folders, filePath string) error {
 			}
 		} else {
 			err := ParseJavaTemplate(jTmplFile, filePath, javaData.TableName, javaData)
-			if err != nil {
-				return err
-			}
-		}
-		if len(javaData.IDFields) > 1 {
-			data := NewJavaComPK(javaData.Package, javaData.TableName+"PK", javaData.IDFields)
-			err := ParseJavaTemplate(tmplPKFile, filePath, javaData.TableName, data)
 			if err != nil {
 				return err
 			}
@@ -702,7 +700,7 @@ func GetValueColumns(output Folders, table string) []string {
 	for _, v := range output.ModelFile[0].Files {
 		if StandardizeName(v.Name) == table {
 			for _, v1 := range v.Fields {
-				if !v1.PrimaryKey && !common.IsExisted(StandardizeName(v.Name), output.ModelFile[0].Entity) {
+				if !v1.PrimaryKey && !common.IsExisted(StandardizeName(v1.Name), output.ModelFile[0].Entity) {
 					res = append(res, ToLower(v1.Name))
 				}
 			}
