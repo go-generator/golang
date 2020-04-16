@@ -105,7 +105,7 @@ func JsonDescriptionGenerator(env, output string, conn *gorm.DB, dc *DatabaseCon
 					foreign.Type = "*[]" + StandardizeName(rl.Table)
 					relationship.Fields = append(relationship.Fields, Link{
 						Column: rl.Column,
-						Ref:    rl.ReferencedColumn,
+						To:     rl.ReferencedColumn,
 					})
 					m.Arrays = append(m.Arrays, relationship)
 					m.Fields = append(m.Fields, foreign)
@@ -181,7 +181,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 					relationship.Ref = rl.Table
 					relationship.Fields = append(relationship.Fields, Link{
 						Column: rl.Column,
-						Ref:    rl.ReferencedColumn,
+						To:     rl.ReferencedColumn,
 					})
 					if m.Arrays == nil {
 						m.Arrays = append(m.Arrays, relationship)
@@ -382,7 +382,7 @@ func GetConnection(output *Folders) []Connection {
 				for _, v2 := range v1.Fields {
 					field := Link{
 						Column: v2.Column,
-						Ref:    v2.Ref,
+						To:     v2.To,
 					}
 					tmp.Fields = append(tmp.Fields, field)
 				}
@@ -490,7 +490,7 @@ func WriteJavaFiles(output Folders, filePath string) error {
 				for index2 := range connection[index].Fields {
 					joinColumn := ColumnRef{
 						Col:           connection[index].Fields[index2].Column,
-						ReferencedCol: connection[index].Fields[index2].Ref,
+						ReferencedCol: connection[index].Fields[index2].To,
 					}
 					tableRef.JoinColumns = append(tableRef.JoinColumns, joinColumn)
 				}

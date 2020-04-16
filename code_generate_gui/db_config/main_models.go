@@ -70,7 +70,7 @@ type Connection struct {
 
 type Link struct {
 	Column string `json:"column"`
-	Ref    string `json:"ref"`
+	To     string `json:"ref"`
 }
 
 type JavaComPK struct {
