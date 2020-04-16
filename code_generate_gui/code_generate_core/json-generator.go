@@ -144,7 +144,7 @@ func InputStructToOutputString(result *string) string {
 				}
 			}
 		}
-		ModelJSONFileGenerator(FilesDetails{
+		FileDetailsToOutput(FilesDetails{
 			Model: input.Folders[k].Model,
 			Files: input.Folders[k].Files,
 		}, &output)
@@ -224,7 +224,6 @@ func OutputStructToFiles(directory string) string {
 	return ""
 }
 func OutputStructToZip() string {
-	//TODO: Load output model for file
 	if output.Files == nil {
 		file, err := dialog.File().Filter("json file", "json").Load()
 		res := ""
@@ -232,7 +231,6 @@ func OutputStructToZip() string {
 			return err.Error()
 		}
 		GenerateFromFile(templateDir, projectName, file, &res)
-		//return "No File To Zip"
 	}
 	directory, err := dialog.File().Filter("zip file", "zip").Title("Export to zip").Save()
 	if err != nil {
@@ -306,6 +304,7 @@ func OutputStructToZip() string {
 	}
 	return ""
 }
+
 func GenerateFromString(temp, project, guiInput string, outputString *string) string {
 	input = Input{}
 	output = Output{}
@@ -329,6 +328,7 @@ func GenerateFromString(temp, project, guiInput string, outputString *string) st
 	}
 	return ""
 }
+
 func GenerateFromFile(temp, project, filename string, outputString *string) string {
 	input = Input{}
 	output = Output{}

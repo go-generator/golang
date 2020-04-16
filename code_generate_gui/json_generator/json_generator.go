@@ -53,7 +53,7 @@ func RunWithCommandLine() {
 			log.Println(err)
 		}
 	}()
-	rl, _ := DatabaseRelationships(dbConfig, conn)
+	rl, _ := DatabaseRelationships(&dbConfig, conn)
 	err = JsonDescriptionGenerator(packageFolder, outputFile, conn, &dbConfig, rl)
 	if err != nil {
 		log.Println(err)
@@ -84,4 +84,29 @@ func RunWithUI(app fyne.App, absPath string) (fyne.Window, error) {
 	}
 	w = InputUI(&dbConfig, app, absPath, encryptField)
 	return w, err
+}
+
+func JavaFilesGenerator(app fyne.App, absPath string) error {
+	var dbConfig DatabaseConfig
+	encryptField := "Password"
+	if _, err := os.Stat(absPath); os.IsNotExist(err) { // Check if cache file exists, if not then create one
+		err = ioutil.WriteFile(absPath, nil, 0666)
+		if err != nil {
+			ShowWindows(app, "Error", err.Error())
+			return err
+		}
+	}
+	fs, err := os.Stat(absPath)
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
+		return err
+	}
+	if fs.Size() != 0 { // Check if cache file is empty
+		err = ReadCacheFile(absPath, &dbConfig, encryptField)
+		if err != nil {
+			ShowWindows(app, "Error", err.Error())
+		}
+	}
+	err = JavaUI()
+	return err
 }

@@ -15,7 +15,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	a := app.New()
 	a.Settings().SetTheme(theme.LightTheme())
-	a.SetIcon(theme.FyneLogo())
+	//a.SetIcon(theme.FyneLogo())
 	w := a.NewWindow("Metadata and Code Generator")
 	w.Resize(fyne.Size{
 		Width: 640,

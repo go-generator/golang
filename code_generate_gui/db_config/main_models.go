@@ -25,7 +25,7 @@ type ModelJSON struct {
 	Source        string          `json:"source"`
 	ConstValue    []Const         `json:"const"`
 	TypeAlias     []TypeAlias     `json:"type_alias"`
-	Relationships []Relationship  `json:"relationships"`
+	Relationships []Relationship  `json:"arrays"`
 	Fields        []FieldElements `json:"fields"`
 	WriteFile     strings.Builder `json:"-"`
 }
@@ -42,19 +42,92 @@ type TypeAlias struct {
 }
 
 type FieldElements struct {
-	Name   string `json:"name"`
-	Source string `json:"source"`
-	Type   string `json:"type"`
-	//ForeignKey string `json:"foreignKey"`
-	PrimaryKey bool `json:"primaryKey"`
+	Name       string `json:"name"`
+	Source     string `json:"source"`
+	Type       string `json:"type"`
+	PrimaryKey bool   `json:"primaryKey,omitempty"`
 }
 
 type Relationship struct {
-	ReType string
-	Ref    References
+	Table  string  `json:"table"`
+	Fields []Field `json:"fields"`
 }
 
-type References struct {
-	Table   string
-	RefCols []string
+func (m *ModelJSON) ExtractFieldType() map[string]string {
+	res := make(map[string]string)
+	for _, v := range m.Fields {
+		res[v.Name] = v.Type
+	}
+	return res
+}
+
+type Connection struct {
+	TableName       string
+	ReferencedTable string
+	Fields          []Field
+}
+
+type Field struct {
+	ColumnName       string `json:"column"`
+	ReferencedColumn string `json:"ref"`
+}
+
+type JavaComPK struct {
+	Package    string
+	PKName     string
+	Array      []string
+	Capitalize []string
+	AllGet     string
+}
+
+func NewJavaComPK(pkg, pkName string, arr []string) *JavaComPK {
+	jPk := JavaComPK{
+		Package:    pkg,
+		PKName:     pkName,
+		Array:      arr,
+		Capitalize: make([]string, len(arr)),
+		AllGet:     "",
+	}
+	copy(jPk.Capitalize, jPk.Array)
+	for i := range jPk.Capitalize {
+		jPk.Capitalize[i] = strings.Title(jPk.Capitalize[i])
+		if i == len(jPk.Capitalize)-1 {
+			jPk.AllGet += "get" + strings.Title(jPk.Capitalize[i]) + "()"
+		} else {
+			jPk.AllGet += "get" + strings.Title(jPk.Capitalize[i]) + "(),"
+		}
+	}
+	return &jPk
+}
+
+type JavaTemplate struct {
+	Package   string
+	TableName string
+	Array     []string
+	IDFields  []string
+	IDClass   string
+	TableRef  []TableRef
+}
+
+type TableRef struct {
+	Name        string
+	JoinColumns []ColumnRef
+}
+
+type ColumnRef struct {
+	Col           string
+	ReferencedCol string
+}
+
+func NewJavaTemplate(pkg, table string, idField, arr []string) *JavaTemplate {
+	jTem := JavaTemplate{
+		Package:   pkg,
+		TableName: table,
+		Array:     arr,
+		IDFields:  idField,
+	}
+	if len(idField) > 1 {
+		jTem.IDClass = "@IdClass(" + strings.Title(jTem.TableName) + "PK.class)"
+	}
+	return &jTem
 }

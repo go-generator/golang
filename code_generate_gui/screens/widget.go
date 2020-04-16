@@ -7,6 +7,7 @@ import (
 	"../code_generate_core"
 	"../json_generator"
 	"github.com/sqweek/dialog"
+	"golang/code_generate_gui/db_config"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/canvas"
@@ -144,7 +145,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	//		cursorRow.SetText("Zip Created On Disk")
 	//	}
 	//})
-	zipAsButton := widget.NewButton("Save Zip From Metadata Json As...", func() {
+	zipAsButton := widget.NewButton("Generate And Zip From Metadata Json As...", func() {
 		cursorRow.SetText("Creating Zip File...")
 		err := code_generate_core.OutputStructToZip()
 		if err != "" {
@@ -153,10 +154,19 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			cursorRow.SetText("Zip Created On Disk")
 		}
 	})
-	modelJsonGenerator := widget.NewButton("Generate Json Description", func() {
+	modelJsonGenerator := widget.NewButton("Generate Database Metadata Json Description", func() {
 		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
 			wi.Show()
+		} else {
+			cursorRow.SetText(err.Error())
+		}
+	})
+	//TODO: Add Java generator
+	javaFilesGenerator := widget.NewButton("Generate Java Files from Json...", func() {
+		err := json_generator.JavaFilesGenerator(app, cachePath)
+		if err == nil {
+			db_config.ShowWindows(app, "Success", "Generated Java Files Successfully")
 		} else {
 			cursorRow.SetText(err.Error())
 		}
@@ -166,12 +176,12 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	list.Append(templateBar)
 	list.Append(okButton)
 	list.Append(saveButton)
-	//list.Append(zipButton)
 	list.Append(openFileButton)
 	list.Append(zipAsButton)
 	list2.Append(projectName)
 	list2.Append(largeText)
 	list.Append(modelJsonGenerator)
+	list.Append(javaFilesGenerator)
 	statusBar := widget.NewHBox(layout.NewSpacer(),
 		widget.NewLabel("Status:"), cursorRow,
 	)

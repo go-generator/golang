@@ -1,8 +1,7 @@
 package common
 
-import "C"
 import (
-	"log"
+	"os"
 	"os/exec"
 	"reflect"
 	"strings"
@@ -10,14 +9,17 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type Uniqueness struct {
+type MySQLUniqueness struct {
 	ColumnName string `gorm:"column:Column_name"`
 	NonUnique  bool   `gorm:"column:Non_unique"` // False mean it's unique, True means it can contain duplicate
 	KeyName    string `gorm:"column:Key_name"`
 }
 
 type PostgresUnique struct {
-	// Add struct
+	// TODO: Add struct
+	TableName string `gorm:"column:tablename"`
+	IndexName string `gorm:"column:indexname"`
+	IndexDef  string `gorm:"column:indexdef"`
 }
 
 type ColumnName struct {
@@ -25,22 +27,37 @@ type ColumnName struct {
 }
 
 func CheckUniqueness(database, table, column string, conn *gorm.DB) bool {
-	var index []Uniqueness
-	mysqlString := "show indexes from " + database + "." + table
-	postgresString := "SELECT * FROM pg_indexes WHERE tablename = '" + table + "'"
-	log.Println(postgresString)
+	var (
+		mySqlIndex    []MySQLUniqueness
+		postgresIndex []PostgresUnique
+	)
 	//log.Println(conn.Dialect().GetName())
 	switch conn.Dialect().GetName() {
 	case "postgres":
-		//TODO: Check Uniqueness for Postgres database
+		//TODO: Check uniqueness for Postgres database
+		postgresString := "SELECT * FROM pg_indexes WHERE tablename = '" + table + "'"
+		conn.Raw(postgresString).Scan(&postgresIndex)
+		for _, v := range postgresIndex {
+			if strings.Contains(v.IndexName, "unq") {
+				tokens := strings.Split(v.IndexName, "_")
+				for i := range tokens {
+					if tokens[i] == "unq" {
+						columnName := strings.Join(tokens[i:], "_")
+						if column == columnName {
+							return true
+						}
+					}
+				}
+			}
+		}
 	case "mysql":
-		conn.Raw(mysqlString).Scan(&index)
-	}
-	conn.Raw(mysqlString).Scan(&index)
-	for _, v := range index {
-		if v.ColumnName == column {
-			if v.NonUnique == false {
-				return true
+		mysqlString := "show indexes from " + database + "." + table
+		conn.Raw(mysqlString).Scan(&mySqlIndex)
+		for _, v := range mySqlIndex {
+			if v.ColumnName == column {
+				if v.NonUnique == false {
+					return true
+				}
 			}
 		}
 	}
@@ -48,7 +65,7 @@ func CheckUniqueness(database, table, column string, conn *gorm.DB) bool {
 } // Check if a column is unique
 
 func CheckPrimaryTag(database, table, column string, conn *gorm.DB) bool {
-	var index []Uniqueness
+	var index []MySQLUniqueness
 	sqlString := "show indexes from " + database + "." + table
 	conn.Raw(sqlString).Scan(&index)
 	for _, v := range index {
@@ -100,4 +117,21 @@ func GetAllStructFields(v interface{}) []string {
 func ShellExecutor(program string, arguments []string) ([]byte, error) {
 	cmd := exec.Command(program, arguments...)
 	return cmd.Output()
+}
+
+func MakeDirectory(path string) (err error) {
+	err = os.MkdirAll(path, 0644)
+	if err != nil && os.IsNotExist(err) {
+		return
+	}
+	return
+}
+
+func IsExisted(v string, s []string) bool {
+	for i := range s {
+		if v == s[i] {
+			return true
+		}
+	}
+	return false
 }

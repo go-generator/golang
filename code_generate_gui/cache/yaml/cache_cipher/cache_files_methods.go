@@ -24,7 +24,7 @@ func ErrorHandle(err error) {
 
 func Generate32ByteString() string {
 	var output string
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	math.Seed(time.Now().UnixNano())
 	for i := 0; i < 32; i++ {
 		index := math.Intn(1000)

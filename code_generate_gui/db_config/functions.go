@@ -40,9 +40,15 @@ func ToLower(s string) string {
 	return string(unicode.ToLower(rune(s[0]))) + s[1:]
 }
 
-func ListAllTableNames(conn *gorm.DB, databaseName string) []string {
+func ListAllTableNames(conn *gorm.DB, databaseName string, dialect string) []string {
 	var res []string
-	conn.Table("information_schema.tables").Select("*").Where("table_schema='"+databaseName+"'").Pluck("table_name", &res)
+	switch dialect {
+	case "mysql":
+		conn.Table("information_schema.tables").Select("*").Where("table_schema='"+databaseName+"'").Pluck("table_name", &res)
+	case "postgres":
+		conn.Table("information_schema.tables").Select("*").Where("table_schema='public' AND table_type='BASE TABLE'").Pluck("table_name", &res)
+	}
+	//TODO: Get All tables name for postgres
 	return res
 }
 
