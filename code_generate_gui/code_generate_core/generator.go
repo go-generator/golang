@@ -22,7 +22,7 @@ const (
 	defaultFileName                   = "input.json"
 	defaultRootPath                   = ""
 	defaultProjectName                = "evaluation"
-	defaultTemplateFolderRelativePath = "./code_generate_core/template"
+	defaultTemplateFolderRelativePath = "./template"
 )
 
 var defaultTemplateFolder = absTemplatePath()
