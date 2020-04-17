@@ -3,6 +3,7 @@ package db_config
 import (
 	"strings"
 
+	. "github.com/go-generator/metadata"
 	_ "github.com/jinzhu/gorm/dialects/mssql"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -20,57 +21,10 @@ type Folders struct {
 	ModelFile []FilesDetails `json:"folders"`
 }
 
-type Model struct {
-	Name       string          `json:"name"`
-	Source     string          `json:"source"`
-	ConstValue []Const         `json:"const"`
-	TypeAlias  []TypeAlias     `json:"type_alias"`
-	Models     []Relationship  `json:"models"`
-	Arrays     []Relationship  `json:"arrays"`
-	Fields     []Field         `json:"fields"`
-	WriteFile  strings.Builder `json:"-"`
-}
-
-type Const struct {
-	Name  string      `json:"name"`
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
-}
-
-type TypeAlias struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
-type Field struct {
-	Name   string `json:"name,omitempty"`
-	Source string `json:"source,omitempty"`
-	Type   string `json:"type,omitempty"`
-	Id     bool   `json:"primaryKey,omitempty"`
-}
-
-type Relationship struct {
-	Ref    string `json:"table"`
-	Fields []Link `json:"fields"`
-}
-
-func (m *Model) ExtractFieldType() map[string]string {
-	res := make(map[string]string)
-	for _, v := range m.Fields {
-		res[v.Name] = v.Type
-	}
-	return res
-}
-
 type Connection struct {
 	TableName       string
 	ReferencedTable string
 	Fields          []Link
-}
-
-type Link struct {
-	Column string `json:"column"`
-	To     string `json:"ref"`
 }
 
 type JavaComPK struct {

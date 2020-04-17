@@ -8,12 +8,14 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/sqweek/dialog"
-	"golang/code_generate_gui/db_relationship/common"
+	"golang/code_generate_gui/code_generate_core/common"
+	"golang/code_generate_gui/code_generate_core/model"
 )
 
 const (
@@ -33,52 +35,25 @@ func absTemplatePath() string {
 	return absPath
 }
 
-type Input struct {
-	Folders []Folder `json:"folders"`
-}
+var (
+	input       model.Input
+	output      model.Output
+	templateDir string
+	projectName string
+)
 
-type Folder struct {
-	Env    []string
-	Entity []string    `json:"entity"`
-	RawEnv []string    `json:"env"`
-	Model  string      `json:"model"`
-	Files  []ModelJSON `json:"files"`
-}
-type Output struct {
-	ProjectName string `json:"projectName"`
-	RootPath    string `json:"rootPath"`
-	Files       []File `json:"files"`
-}
-type File struct {
-	Name    string `json:"name"`
-	Content string `json:"content"`
-}
-
-var input Input
-var output Output
-var templateDir string
-var projectName string
-
-func InputFileToInputStruct(filename string) string {
-	jsonFile, err := os.Open(filename)
+func InputJsonFileToInputStruct(filename string) string {
+	byteValue, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err.Error()
 	}
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		return err.Error()
-	}
-	err = jsonFile.Close()
-	if err != nil {
-		return err.Error()
-	}
-
 	err = json.Unmarshal(byteValue, &input)
 	if err != nil {
 		return err.Error()
 	}
 	return ""
 }
+
 func InputStringToInputStruct(guiInput string) string {
 	err := json.Unmarshal([]byte(guiInput), &input)
 	if err != nil {
@@ -130,7 +105,7 @@ func InputStructToOutputString(result *string) string {
 					text = strings.Replace(text, "{end}", "", 1)
 				}
 				filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].RawEnv[i]+"s")
-				output.Files = append(output.Files, File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
+				output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
 			} else {
 				for j := range input.Folders[k].Entity {
 					text := template
@@ -140,11 +115,11 @@ func InputStructToOutputString(result *string) string {
 					text = strings.ReplaceAll(text, "{entity}", input.Folders[k].Entity[j])
 					text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:])
 					filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
-					output.Files = append(output.Files, File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
+					output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
 				}
 			}
 		}
-		FileDetailsToOutput(FilesDetails{
+		FileDetailsToOutput(model.FilesDetails{
 			Model: input.Folders[k].Model,
 			Files: input.Folders[k].Files,
 		}, &output)
@@ -157,6 +132,7 @@ func InputStructToOutputString(result *string) string {
 	*result = string(file)
 	return ""
 }
+
 func FileNameConverter(s string, path string) string {
 	s2 := strings.ToLower(s)
 	s3 := ""
@@ -214,7 +190,7 @@ func OutputStructToFiles(directory string) string {
 		wg.Add(1)
 		go func(dir string, wtg *sync.WaitGroup) {
 			defer wtg.Done()
-			_, err := common.ShellExecutor("goimports", []string{"-w", dir})
+			_, err := ShellExecutor("goimports", []string{"-w", dir})
 			if err != nil {
 				log.Println(err)
 			}
@@ -223,6 +199,7 @@ func OutputStructToFiles(directory string) string {
 	wg.Wait()
 	return ""
 }
+
 func OutputStructToZip() string {
 	if output.Files == nil {
 		file, err := dialog.File().Filter("json file", "json").Load()
@@ -258,7 +235,7 @@ func OutputStructToZip() string {
 		if err != nil {
 			return err.Error()
 		}
-		_, err = common.ShellExecutor("goimports", []string{"-w", tmp})
+		_, err = ShellExecutor("goimports", []string{"-w", tmp})
 		if err != nil {
 			return err.Error()
 		}
@@ -306,8 +283,8 @@ func OutputStructToZip() string {
 }
 
 func GenerateFromString(temp, project, guiInput string, outputString *string) string {
-	input = Input{}
-	output = Output{}
+	input = model.Input{}
+	output = model.Output{}
 	if temp != "" {
 		templateDir = temp
 	} else {
@@ -330,8 +307,8 @@ func GenerateFromString(temp, project, guiInput string, outputString *string) st
 }
 
 func GenerateFromFile(temp, project, filename string, outputString *string) string {
-	input = Input{}
-	output = Output{}
+	input = model.Input{}
+	output = model.Output{}
 	if temp != "" {
 		templateDir = temp
 	} else {
@@ -342,7 +319,7 @@ func GenerateFromFile(temp, project, filename string, outputString *string) stri
 	} else {
 		projectName = defaultProjectName
 	}
-	err := InputFileToInputStruct(filename)
+	err := InputJsonFileToInputStruct(filename)
 	if err != "" {
 		return err
 	}
@@ -351,4 +328,19 @@ func GenerateFromFile(temp, project, filename string, outputString *string) stri
 		return err
 	}
 	return ""
+}
+
+func ShellExecutor(program string, arguments []string) ([]byte, error) {
+	cmd := exec.Command(program, arguments...)
+	return cmd.Output()
+}
+
+func FileDetailsToOutput(content model.FilesDetails, out *model.Output) {
+	var file model.File
+	for _, k := range content.Files {
+		common.CreateContent(&k, content.Model)
+		file.Name = content.Model + "/" + common.ToLower(k.Name) + ".go"
+		file.Content = k.WriteFile.String()
+		out.Files = append(out.Files, file)
+	}
 }

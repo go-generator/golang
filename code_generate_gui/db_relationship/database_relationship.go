@@ -16,6 +16,7 @@ import (
 	. "./database_models"
 	"fyne.io/fyne"
 	"fyne.io/fyne/widget"
+	. "github.com/go-generator/metadata"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
@@ -471,8 +472,6 @@ func WriteJavaFiles(output Folders, filePath string) error {
 	jTmplOtmFile := filepath.Join(JavaTemplateDir, "java_template_otm.tmpl")
 	tmplPKFile := filepath.Join(JavaTemplateDir, "java_pk.tmpl")
 	connection := GetConnection(&output)
-	//tables := ListAllTableNames(conn, dc.Database, dc.Dialect)
-	//rl, _ := DatabaseRelationships(dc, conn)
 	for i := range output.ModelFile[0].Entity {
 		fields := GetValueColumns(output, output.ModelFile[0].Entity[i])
 		priCols := GetAllPrimaryKeys(output, output.ModelFile[0].Entity[i])

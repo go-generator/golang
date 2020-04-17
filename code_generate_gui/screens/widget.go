@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"../code_generate_core"
 	"../json_generator"
 	"github.com/sqweek/dialog"
+	"golang/code_generate_gui/code_generate_core"
 	"golang/code_generate_gui/db_config"
 
 	"fyne.io/fyne"
@@ -104,7 +104,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			cursorRow.SetText(err)
 		}
 	})
-	openFileButton := widget.NewButton("Generate Code From Metadata Json...", func() {
+	openFileButton := widget.NewButton("Generate Go Template From Metadata Json...", func() {
 		filename, err := dialog.File().Filter("json file", "json").Load()
 		if err != nil {
 			cursorRow.SetText(err.Error())
