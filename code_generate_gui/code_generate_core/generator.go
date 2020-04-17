@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"text/template"
 
 	"github.com/sqweek/dialog"
-	"golang/code_generate_gui/code_generate_core/common"
 	"golang/code_generate_gui/code_generate_core/model"
 )
 
@@ -148,6 +148,8 @@ func FileNameConverter(s string, path string) string {
 }
 
 func OutputStructToFiles(directory string) string {
+	fl := output
+	log.Println(fl)
 	//CREATE FOLDER ON DISK
 	if len(output.Files) == 0 {
 		return "0 File Created On Disk"
@@ -163,26 +165,56 @@ func OutputStructToFiles(directory string) string {
 		output.RootPath += string(os.PathSeparator)
 	}
 	var allFiles []string
-	for i := range output.Files {
-		tmpPath := output.RootPath + output.Files[i].Name
-		tmp := strings.LastIndex(tmpPath, "/")
-		tmpPath = tmpPath[:tmp]
-		err := os.MkdirAll(tmpPath, os.ModePerm)
+	modelTmpl := filepath.Join(defaultTemplateFolder, "model.txt")
+	funcMap := template.FuncMap{
+		"AddJsonTag":        AddJSONTag,
+		"AddBsonTag":        AddBSONTag,
+		"AddGormTag":        AddGORMTag,
+		"AddGormPrimaryTag": AddGORMPrimaryTag,
+	}
+	tmplName := filepath.Base(modelTmpl)
+	mTmpl := template.New(tmplName).Funcs(funcMap)
+	mT, err := mTmpl.ParseFiles(modelTmpl)
+	if err != nil {
+		return err.Error()
+	}
+	for i := range output.OutFile {
+		err := os.MkdirAll(filepath.Join(output.RootPath, "model"), os.ModePerm)
 		if err != nil {
 			return err.Error()
 		}
-		f, err := os.Create(output.RootPath + output.Files[i].Name)
+		f, err := os.Create(filepath.Join(output.RootPath, "model", output.OutFile[i].Name+".go"))
 		if err != nil {
 			return err.Error()
 		}
-		_, err = f.WriteString(output.Files[i].Content)
+		err = mT.Execute(f, output.OutFile[i])
 		if err != nil {
 			return err.Error()
 		}
 		allFiles = append(allFiles, f.Name())
-		err = f.Close()
-		if err != nil {
-			return err.Error()
+	}
+	for i := range output.Files {
+		if output.Files[i].Content != "" {
+			tmpPath := output.RootPath + output.Files[i].Name
+			tmp := strings.LastIndex(tmpPath, "/")
+			tmpPath = tmpPath[:tmp]
+			err := os.MkdirAll(tmpPath, os.ModePerm)
+			if err != nil {
+				return err.Error()
+			}
+			f, err := os.Create(output.RootPath + output.Files[i].Name)
+			if err != nil {
+				return err.Error()
+			}
+			_, err = f.WriteString(output.Files[i].Content)
+			if err != nil {
+				return err.Error()
+			}
+			allFiles = append(allFiles, f.Name())
+			err = f.Close()
+			if err != nil {
+				return err.Error()
+			}
 		}
 	}
 	var wg sync.WaitGroup
@@ -338,8 +370,8 @@ func ShellExecutor(program string, arguments []string) ([]byte, error) {
 func FileDetailsToOutput(content model.FilesDetails, out *model.Output) {
 	var file model.File
 	for _, k := range content.Files {
-		common.CreateContent(&k, content.Model)
-		file.Name = content.Model + "/" + common.ToLower(k.Name) + ".go"
+		out.OutFile = append(output.OutFile, WriteStruct(&k))
+		file.Name = content.Model + "/" + ToLower(k.Name) + ".go"
 		file.Content = k.WriteFile.String()
 		out.Files = append(out.Files, file)
 	}
