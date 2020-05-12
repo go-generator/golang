@@ -3,7 +3,7 @@ package model
 import . "github.com/go-generator/metadata"
 
 type Folder struct {
-	Env    []string
+	Array []string	`json:"array"`
 	Entity []string `json:"entity"`
 	RawEnv []string `json:"env"`
 	Model  string   `json:"model"`

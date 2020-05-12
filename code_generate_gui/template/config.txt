@@ -2,9 +2,9 @@ package config
 
 import (
 	"context"
-	"{projectName}/controller"
+	"${projectName}/controller"
 
-	"{projectName}/service/impl"
+	"${projectName}/service/impl"
 
 	"github.com/common-go/mongo"
 )
@@ -12,7 +12,7 @@ import (
 
 type ApplicationContext struct {
 	{begin}
-	{entity}Controller               *controller.{entity}Controller
+	${entity}Controller               *controller.${entity}Controller
 	{end}
 }
 
@@ -32,10 +32,10 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ) (*ApplicationContext
 	}
 	activityLogService := impl.NewActivityLogServiceImpl(mongoDb)
 	{begin}
-	{entityLowerFirstCharacter}Service := impl.New{entity}ServiceImpl(mongoDb, mongoSearchResultBuilder)
-	{entityLowerFirstCharacter}Controller := controller.New{entity}Controller({entityLowerFirstCharacter}Service, activityLogService)
+	${entityLowerFirstCharacter}Service := impl.New${entity}ServiceImpl(mongoDb, mongoSearchResultBuilder)
+	${entityLowerFirstCharacter}Controller := controller.New${entity}Controller(${entityLowerFirstCharacter}Service, activityLogService)
 	{end}
 
 
-	return &ApplicationContext{{begin}{entityLowerFirstCharacter}Controller, {end}}, nil
+	return &ApplicationContext{{begin}${entityLowerFirstCharacter}Controller, {end}}, nil
 }

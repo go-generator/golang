@@ -41,6 +41,62 @@ var (
 	templateDir string
 	projectName string
 )
+func ShareMapInitF(env string) map[string]string{
+	return map[string]string{
+		"${env}": env,
+		"${projectName}": projectName,
+		"${projectNameUpperFirstCharacter}": strings.Title(projectName),
+	}
+}
+func ArrMapInitF(entityList []string) []map[string]string{
+	var tmp []map[string]string
+	for _,v:= range entityList {
+		tmp = append(tmp,
+			map[string]string{
+				"${entity}":                    v,
+				"${entityLowerFirstCharacter}": strings.ToLower(string(v[0])) + v[1:],
+			})
+	}
+	return tmp
+}
+func FullMapInitF(env string, entity string) map[string]string{
+	return map[string]string{
+		"${env}": env,
+		"${projectName}": projectName,
+		"${projectNameUpperFirstCharacter}": strings.Title(projectName),
+		"${entity}":                    entity,
+		"${entityLowerFirstCharacter}": strings.ToLower(string(entity[0])) + entity[1:],
+	}
+}
+func EnvTemplateF(template string, fullMap map[string]string) string {
+	text := template
+	for k,v:=range fullMap{
+		text=strings.ReplaceAll(text,k,v)
+	}
+	return text
+}
+func ArrayTemplateF(template string, share map[string]string, arr []map[string]string ) string{
+	text := template
+	for k,v:=range share{
+		text = strings.ReplaceAll(text, k, v)
+	}
+	for strings.Contains(text, "{begin}") {
+		begin := strings.Index(text, "{begin}")
+		end := strings.Index(text, "{end}")
+		tmpText := text[:begin]
+		for j := 0; j < len(arr); j++ {
+			tmp:= text[begin+len("{begin}") : end-1]
+			for k,v:=range arr[j]{
+				tmp=strings.ReplaceAll(tmp,k,v)
+			}
+			tmpText += tmp
+		}
+		text = tmpText + text[end+len("{end}"):]
+		//text = strings.Replace(text, "{begin}", "", 1)
+		//text = strings.Replace(text, "{end}", "", 1)
+	}
+	return text
+}
 
 func InputJsonFileToInputStruct(filename string) string {
 	byteValue, err := ioutil.ReadFile(filename)
@@ -62,6 +118,7 @@ func InputStringToInputStruct(guiInput string) string {
 	return ""
 }
 
+
 func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
 	output.RootPath = defaultRootPath
@@ -71,53 +128,35 @@ func InputStructToOutputString(result *string) string {
 		for i := range input.Folders[k].RawEnv {
 			//Convert RawEnv to Model
 			tmp := strings.LastIndex(input.Folders[k].RawEnv[i], "/")
-			input.Folders[k].Env = append(input.Folders[k].Env, input.Folders[k].RawEnv[i][tmp+1:])
+			CleanEnv:=input.Folders[k].RawEnv[i][tmp+1:]
 
 			//READ THE TEMPLATE FILES
-			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + input.Folders[k].Env[i] + ".txt")
+			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
 			if err != nil {
 				return err.Error()
 			}
 			template := string(content)
-			if strings.Contains(template, "{begin}") {
-				text := template
-				text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
-				text = strings.ReplaceAll(text, "{projectName}", projectName)
-				text = strings.ReplaceAll(text, "{projectNameUpperFirstCharacter}", strings.Title(projectName))
-				for strings.Contains(text, "{begin}") {
-					begin := strings.Index(text, "{begin}")
-					end := strings.Index(text, "{end}")
-					//envCount := strings.Count(text[begin:end], "{env}")
-					entityCount := strings.Count(text[begin:end], "{entity}")
-					entityLowerFirstCharacterCount := strings.Count(text[begin:end], "{entityLowerFirstCharacter}")
-					tmpText := text[:end+len("{end}")]
-					for j := 0; j < len(input.Folders[k].Entity)-1; j++ {
-						tmpText += text[begin+len("{begin}") : end-1]
-					}
-					text = tmpText + text[end+len("{end}"):]
-
-					for j := range input.Folders[k].Entity {
-						//text = strings.Replace(text, "{env}", input.ModelFile[k].Model[i], envCount)
-						text = strings.Replace(text, "{entity}", input.Folders[k].Entity[j], entityCount)
-						text = strings.Replace(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:], entityLowerFirstCharacterCount)
-					}
-					text = strings.Replace(text, "{begin}", "", 1)
-					text = strings.Replace(text, "{end}", "", 1)
-				}
-				filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].RawEnv[i]+"s")
+			for j := range input.Folders[k].Entity {
+				text := EnvTemplateF(template, FullMapInitF(CleanEnv,input.Folders[k].Entity[j]))
+				filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
 				output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
-			} else {
-				for j := range input.Folders[k].Entity {
-					text := template
-					text = strings.ReplaceAll(text, "{env}", input.Folders[k].Env[i])
-					text = strings.ReplaceAll(text, "{projectName}", projectName)
-					text = strings.ReplaceAll(text, "{projectNameUpperFirstCharacter}", strings.Title(projectName))
-					text = strings.ReplaceAll(text, "{entity}", input.Folders[k].Entity[j])
-					text = strings.ReplaceAll(text, "{entityLowerFirstCharacter}", string(strings.ToLower(input.Folders[k].Entity[j])[0])+input.Folders[k].Entity[j][1:])
-					filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
-					output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
-				}
 			}
+			}
+		for i := range input.Folders[k].Array {
+			//Convert RawEnv to Model
+			tmp := strings.LastIndex(input.Folders[k].Array[i], "/")
+			CleanEnv:=input.Folders[k].Array[i][tmp+1:]
+
+			//READ THE TEMPLATE FILES
+			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
+			if err != nil {
+				return err.Error()
+			}
+			template := string(content)
+			text:= ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entity))
+			filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Array[i]+"s")
+			output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].Array[i], "_", "-") + "/" + filename, text})
+
 		}
 		FileDetailsToOutput(model.FilesDetails{
 			Model: input.Folders[k].Model,
