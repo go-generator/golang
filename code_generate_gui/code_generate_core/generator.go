@@ -126,10 +126,10 @@ func InputStructToOutputString(result *string) string {
 	output.ProjectName = projectName
 	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
 	for k := range input.Folders {
-		for i := range input.Folders[k].RawEnv {
+		for i := range input.Folders[k].Environments {
 			//Convert RawEnv to Model
-			tmp := strings.LastIndex(input.Folders[k].RawEnv[i], "/")
-			CleanEnv:=input.Folders[k].RawEnv[i][tmp+1:]
+			tmp := strings.LastIndex(input.Folders[k].Environments[i], "/")
+			CleanEnv:=input.Folders[k].Environments[i][tmp+1:]
 
 			//READ THE TEMPLATE FILES
 			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
@@ -137,16 +137,16 @@ func InputStructToOutputString(result *string) string {
 				return err.Error()
 			}
 			template := string(content)
-			for j := range input.Folders[k].Entity {
-				text := EnvTemplateF(template, FullMapInitF(CleanEnv,input.Folders[k].Entity[j]))
-				filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
-				output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
+			for j := range input.Folders[k].Entities {
+				text := EnvTemplateF(template, FullMapInitF(CleanEnv,input.Folders[k].Entities[j]))
+				filename := FileNameConverter(input.Folders[k].Entities[j], input.Folders[k].Environments[i])
+				output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Environments[i], "_", "-") + "/" + filename, text})
 			}
 			}
-		for i := range input.Folders[k].Array {
+		for i := range input.Folders[k].Arrays {
 			//Convert RawEnv to Model
-			tmp := strings.LastIndex(input.Folders[k].Array[i], "/")
-			CleanEnv:=input.Folders[k].Array[i][tmp+1:]
+			tmp := strings.LastIndex(input.Folders[k].Arrays[i], "/")
+			CleanEnv:=input.Folders[k].Arrays[i][tmp+1:]
 
 			//READ THE TEMPLATE FILES
 			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
@@ -154,14 +154,14 @@ func InputStructToOutputString(result *string) string {
 				return err.Error()
 			}
 			template := string(content)
-			text:= ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entity))
-			filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Array[i]+"s")
-			output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Array[i], "_", "-") + "/" + filename, text})
+			text:= ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entities))
+			filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Arrays[i]+"s")
+			output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Arrays[i], "_", "-") + "/" + filename, text})
 
 		}
 		FileDetailsToOutput(model.FilesDetails{
-			Model: input.Folders[k].Model,
-			Files: input.Folders[k].Files,
+			//Model: "model",
+			Files: input.Folders[k].Models,
 		}, &output)
 	}
 	//OUTPUT STRUCT TO STRING(JSON)
