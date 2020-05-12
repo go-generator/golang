@@ -2,10 +2,8 @@
   "folders": [
     {
       "environments": [
-        "search_model",
-        "controller",
-        "service/impl",
-        "service"
+        "main",
+        "go.mod"
       ],
       "arrays": [
         "config",

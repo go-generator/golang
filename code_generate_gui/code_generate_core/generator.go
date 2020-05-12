@@ -4,6 +4,7 @@ package code_generate_core
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -43,21 +44,22 @@ var (
 	templateDir string
 	projectName string
 )
-func ShareMapInitF(env string) map[string]string{
+
+func ShareMapInitF(packageName, projectName string) map[string]string {
 	return map[string]string{
-		"${array_package}": env,
-		"${projectName}":   projectName,
-		"${ProjectName}":   strings.Title(projectName),
+		"${package_name}": packageName,
+		"${projectName}":  projectName,
+		"${ProjectName}":  strings.Title(projectName),
 	}
 }
-func ArrMapInitF(entityList []string) []map[string]string{
+func ArrMapInitF(entityList []string) []map[string]string {
 	var tmp []map[string]string
-	for _,v:= range entityList {
+	for _, v := range entityList {
 		tmp = append(tmp, templ.BuildNames(v))
 	}
 	return tmp
 }
-func FullMapInitF(env string, entity string) map[string]string{
+func FullMapInitF(env string, entity string) map[string]string {
 	return map[string]string{
 		"${static_package}": env,
 		"${projectName}":    projectName,
@@ -68,14 +70,14 @@ func FullMapInitF(env string, entity string) map[string]string{
 }
 func EnvTemplateF(template string, fullMap map[string]string) string {
 	text := template
-	for k,v:=range fullMap{
-		text=strings.ReplaceAll(text,k,v)
+	for k, v := range fullMap {
+		text = strings.ReplaceAll(text, k, v)
 	}
 	return text
 }
-func ArrayTemplateF(template string, share map[string]string, arr []map[string]string ) string{
+func ArrayTemplateF(template string, share map[string]string, arr []map[string]string) string {
 	text := template
-	for k,v:=range share{
+	for k, v := range share {
 		text = strings.ReplaceAll(text, k, v)
 	}
 	for strings.Contains(text, "{begin}") {
@@ -83,9 +85,9 @@ func ArrayTemplateF(template string, share map[string]string, arr []map[string]s
 		end := strings.Index(text, "{end}")
 		tmpText := text[:begin]
 		for j := 0; j < len(arr); j++ {
-			tmp:= text[begin+len("{begin}") : end-1]
-			for k,v:=range arr[j]{
-				tmp=strings.ReplaceAll(tmp,k,v)
+			tmp := text[begin+len("{begin}") : end-1]
+			for k, v := range arr[j] {
+				tmp = strings.ReplaceAll(tmp, k, v)
 			}
 			tmpText += tmp
 		}
@@ -116,7 +118,6 @@ func InputStringToInputStruct(guiInput string) string {
 	return ""
 }
 
-
 func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
 	output.RootPath = defaultRootPath
@@ -126,7 +127,7 @@ func InputStructToOutputString(result *string) string {
 		for i := range input.Folders[k].Environments {
 			//Convert RawEnv to Model
 			tmp := strings.LastIndex(input.Folders[k].Environments[i], "/")
-			CleanEnv:=input.Folders[k].Environments[i][tmp+1:]
+			CleanEnv := input.Folders[k].Environments[i][tmp+1:]
 
 			//READ THE TEMPLATE FILES
 			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
@@ -134,28 +135,33 @@ func InputStructToOutputString(result *string) string {
 				return err.Error()
 			}
 			template := string(content)
-			for j := range input.Folders[k].Entities {
-				text := EnvTemplateF(template, FullMapInitF(CleanEnv,input.Folders[k].Entities[j]))
-				filename := FileNameConverter(input.Folders[k].Entities[j], input.Folders[k].Environments[i])
-				output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Environments[i], "_", "-") + "/" + filename, text})
-			}
-			}
-		for i := range input.Folders[k].Arrays {
-			//Convert RawEnv to Model
-			tmp := strings.LastIndex(input.Folders[k].Arrays[i], "/")
-			CleanEnv:=input.Folders[k].Arrays[i][tmp+1:]
-
-			//READ THE TEMPLATE FILES
-			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
-			if err != nil {
-				return err.Error()
-			}
-			template := string(content)
-			text:= ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entities))
-			filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Arrays[i]+"s")
-			output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Arrays[i], "_", "-") + "/" + filename, text})
+			//for j := range input.Folders[k].Entities {
+			//	text := EnvTemplateF(template, FullMapInitF(CleanEnv, input.Folders[k].Entities[j]))
+			//	filename := FileNameConverter(input.Folders[k].Entities[j], input.Folders[k].Environments[i])
+			//	output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Environments[i], "_", "-") + "/" + filename, text})
+			//}
+			var t templ.DefaultStaticTemplate
+			text := t.Generate(context.Background(), template, ShareMapInitF(CleanEnv, projectName))
+			filename := FileNameConverter("", input.Folders[k].Environments[i])
+			output.Files = append(output.Files, iou.File{"/" + filename, text})
 
 		}
+		//for i := range input.Folders[k].Arrays {
+		//	//Convert RawEnv to Model
+		//	tmp := strings.LastIndex(input.Folders[k].Arrays[i], "/")
+		//	CleanEnv := input.Folders[k].Arrays[i][tmp+1:]
+		//
+		//	//READ THE TEMPLATE FILES
+		//	content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
+		//	if err != nil {
+		//		return err.Error()
+		//	}
+		//	template := string(content)
+		//	text := ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entities))
+		//	filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Arrays[i]+"s")
+		//	output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Arrays[i], "_", "-") + "/" + filename, text})
+		//
+		//}
 		FileDetailsToOutput(model.FilesDetails{
 			//Model: "model",
 			Files: input.Folders[k].Models,
@@ -171,6 +177,14 @@ func InputStructToOutputString(result *string) string {
 }
 
 func FileNameConverter(s string, path string) string {
+	ext := ".go"
+	if strings.Contains(path, ".") {
+		ext = ""
+	}
+	path = strings.ReplaceAll(path, "/", "_")
+	if s == "" {
+		return path + ext
+	}
 	s2 := strings.ToLower(s)
 	s3 := ""
 	for i := range s {
@@ -180,8 +194,8 @@ func FileNameConverter(s string, path string) string {
 			s3 += string(s2[i])
 		}
 	}
-	path = strings.ReplaceAll(path, "/", "_")
-	return s3[1:] + "_" + path + ".go"
+
+	return s3[1:] + "_" + path + ext
 }
 
 func OutputStructToFiles(directory string) string {
