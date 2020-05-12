@@ -14,6 +14,7 @@ import (
 	"sync"
 	"text/template"
 
+	iou "github.com/go-generator/io"
 	"github.com/sqweek/dialog"
 	"golang/code_generate_gui/code_generate_core/model"
 )
@@ -139,7 +140,7 @@ func InputStructToOutputString(result *string) string {
 			for j := range input.Folders[k].Entity {
 				text := EnvTemplateF(template, FullMapInitF(CleanEnv,input.Folders[k].Entity[j]))
 				filename := FileNameConverter(input.Folders[k].Entity[j], input.Folders[k].RawEnv[i])
-				output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
+				output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].RawEnv[i], "_", "-") + "/" + filename, text})
 			}
 			}
 		for i := range input.Folders[k].Array {
@@ -155,7 +156,7 @@ func InputStructToOutputString(result *string) string {
 			template := string(content)
 			text:= ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entity))
 			filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Array[i]+"s")
-			output.Files = append(output.Files, model.File{strings.ReplaceAll(input.Folders[k].Array[i], "_", "-") + "/" + filename, text})
+			output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Array[i], "_", "-") + "/" + filename, text})
 
 		}
 		FileDetailsToOutput(model.FilesDetails{
@@ -407,7 +408,7 @@ func ShellExecutor(program string, arguments []string) ([]byte, error) {
 }
 
 func FileDetailsToOutput(content model.FilesDetails, out *model.Output) {
-	var file model.File
+	var file iou.File
 	for _, k := range content.Files {
 		out.OutFile = append(output.OutFile, WriteStruct(&k))
 		file.Name = content.Model + "/" + ToLower(k.Name) + ".go"
