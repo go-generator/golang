@@ -1,4 +1,4 @@
-package ${array_package}
+package ${package_name}
 
 import (
 	"${projectName}/config"
@@ -22,7 +22,7 @@ func New${ProjectName}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*Eva
 	e.Use(middleware.Recover())
 
 
-    {begin}
+    ${begin}
 	${name}Controller := applicationContext.${Name}Controller
 	${name}Path := "/${projectName}/${name}"
 	e.GET(${name}Path, ${name}Controller.GetAll())
@@ -30,7 +30,7 @@ func New${ProjectName}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*Eva
 	e.GET(${name}Path+"/:id", ${name}Controller.GetById())
 	e.POST(${name}Path+"/search", ${name}Controller.Search())
 	e.PUT(${name}Path+"/:id", ${name}Controller.Update())
-	{end}
+	${end}
 
 	return &EvaRoutes{e}, nil
 }

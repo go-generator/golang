@@ -1,4 +1,4 @@
-package ${array_package}
+package ${package_name}
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 
 
 type ApplicationContext struct {
-	{begin}
+	${begin}
 	${Name}Controller               *controller.${Name}Controller
-	{end}
+	${end}
 }
 
 func NewApplicationContext(mongoConfig mongo.MongoConfig, ) (*ApplicationContext, error) {
@@ -31,11 +31,11 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ) (*ApplicationContext
 		SortBuilder:  mongoSortBuilder,
 	}
 	activityLogService := impl.NewActivityLogServiceImpl(mongoDb)
-	{begin}
+	${begin}
 	${name}Service := impl.New${Name}ServiceImpl(mongoDb, mongoSearchResultBuilder)
 	${name}Controller := controller.New${Name}Controller(${name}Service, activityLogService)
-	{end}
+	${end}
 
 
-	return &ApplicationContext{{begin}${name}Controller, {end}}, nil
+	return &ApplicationContext{${begin}${name}Controller, ${end}}, nil
 }
