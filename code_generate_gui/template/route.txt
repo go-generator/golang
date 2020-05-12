@@ -1,4 +1,4 @@
-package ${env}
+package ${array_package}
 
 import (
 	"${projectName}/config"
@@ -11,7 +11,7 @@ type EvaRoutes struct {
 	Router *echo.Echo
 }
 
-func New${projectNameUpperFirstCharacter}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*EvaRoutes, error) {
+func New${ProjectName}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*EvaRoutes, error) {
 	applicationContext, err := config.NewApplicationContext(mongoConfig,)
 	if err != nil {
 		return nil, err
@@ -23,13 +23,13 @@ func New${projectNameUpperFirstCharacter}Routes(e *echo.Echo, mongoConfig mongo.
 
 
     {begin}
-	${entityLowerFirstCharacter}Controller := applicationContext.${entity}Controller
-	${entityLowerFirstCharacter}Path := "/${projectName}/${entityLowerFirstCharacter}"
-	e.GET(${entityLowerFirstCharacter}Path, ${entityLowerFirstCharacter}Controller.GetAll())
-	e.POST(${entityLowerFirstCharacter}Path, ${entityLowerFirstCharacter}Controller.Insert())
-	e.GET(${entityLowerFirstCharacter}Path+"/:id", ${entityLowerFirstCharacter}Controller.GetById())
-	e.POST(${entityLowerFirstCharacter}Path+"/search", ${entityLowerFirstCharacter}Controller.Search())
-	e.PUT(${entityLowerFirstCharacter}Path+"/:id", ${entityLowerFirstCharacter}Controller.Update())
+	${name}Controller := applicationContext.${Name}Controller
+	${name}Path := "/${projectName}/${name}"
+	e.GET(${name}Path, ${name}Controller.GetAll())
+	e.POST(${name}Path, ${name}Controller.Insert())
+	e.GET(${name}Path+"/:id", ${name}Controller.GetById())
+	e.POST(${name}Path+"/search", ${name}Controller.Search())
+	e.PUT(${name}Path+"/:id", ${name}Controller.Update())
 	{end}
 
 	return &EvaRoutes{e}, nil

@@ -1,4 +1,4 @@
-package ${env}
+package ${static_package}
 
 import (
 	"${projectName}/handler"
@@ -9,18 +9,18 @@ import (
     "reflect"
 )
 
-type ${entity}Controller struct {
+type ${Entity}Controller struct {
 	*GenericController
 	*SearchController
 }
 
 
-func New${entity}Controller(${entityLowerFirstCharacter}Service service.${entity}Service, logService ActivityLogService) *${entity}Controller {
-	var ${entityLowerFirstCharacter}Model model.${entity}
-	modelType := reflect.TypeOf(${entityLowerFirstCharacter}Model)
-	searchModelType := reflect.TypeOf(search_model.${entity}SM{})
-	idNames := ${entityLowerFirstCharacter}Service.GetIdNames()
+func New${Entity}Controller(${entity}Service service.${Entity}Service, logService ActivityLogService) *${Entity}Controller {
+	var ${entity}Model model.${Entity}
+	modelType := reflect.TypeOf(${entity}Model)
+	searchModelType := reflect.TypeOf(search_model.${Entity}SM{})
+	idNames := ${entity}Service.GetIdNames()
 	controlModelHandler := handler.NewControlModelHandler(idNames)
-	genericController, searchController:= NewGenericSearchController(${entityLowerFirstCharacter}Service, modelType, controlModelHandler, ${entityLowerFirstCharacter}Service, searchModelType,nil, logService, true, "")
-	return &${entity}Controller{GenericController: genericController, SearchController: searchController}
+	genericController, searchController:= NewGenericSearchController(${entity}Service, modelType, controlModelHandler, ${entity}Service, searchModelType,nil, logService, true, "")
+	return &${Entity}Controller{GenericController: genericController, SearchController: searchController}
 }

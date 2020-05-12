@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	iou "github.com/go-generator/io"
+	templ "github.com/go-generator/template"
 	"github.com/sqweek/dialog"
 	"golang/code_generate_gui/code_generate_core/model"
 )
@@ -44,29 +45,25 @@ var (
 )
 func ShareMapInitF(env string) map[string]string{
 	return map[string]string{
-		"${env}": env,
-		"${projectName}": projectName,
-		"${projectNameUpperFirstCharacter}": strings.Title(projectName),
+		"${array_package}": env,
+		"${projectName}":   projectName,
+		"${ProjectName}":   strings.Title(projectName),
 	}
 }
 func ArrMapInitF(entityList []string) []map[string]string{
 	var tmp []map[string]string
 	for _,v:= range entityList {
-		tmp = append(tmp,
-			map[string]string{
-				"${entity}":                    v,
-				"${entityLowerFirstCharacter}": strings.ToLower(string(v[0])) + v[1:],
-			})
+		tmp = append(tmp, templ.BuildNames(v))
 	}
 	return tmp
 }
 func FullMapInitF(env string, entity string) map[string]string{
 	return map[string]string{
-		"${env}": env,
-		"${projectName}": projectName,
-		"${projectNameUpperFirstCharacter}": strings.Title(projectName),
-		"${entity}":                    entity,
-		"${entityLowerFirstCharacter}": strings.ToLower(string(entity[0])) + entity[1:],
+		"${static_package}": env,
+		"${projectName}":    projectName,
+		"${ProjectName}":    strings.Title(projectName),
+		"${Entity}":         entity,
+		"${entity}":         strings.ToLower(string(entity[0])) + entity[1:],
 	}
 }
 func EnvTemplateF(template string, fullMap map[string]string) string {

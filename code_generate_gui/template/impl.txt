@@ -1,4 +1,4 @@
-package ${env}
+package ${static_package}
 
 import (
 	. "${projectName}/model"
@@ -7,17 +7,17 @@ import (
 	"reflect"
 )
 
-type ${entity}ServiceImpl struct {
+type ${Entity}ServiceImpl struct {
 	database   *mongo.Database
 	collection *mongo.Collection
 	*DefaultGenericService
 	*DefaultSearchService
 }
 
-func New${entity}ServiceImpl(db *mongo.Database, searchResultBuilder SearchResultBuilder) *${entity}ServiceImpl {
-	var model ${entity}
+func New${Entity}ServiceImpl(db *mongo.Database, searchResultBuilder SearchResultBuilder) *${Entity}ServiceImpl {
+	var model ${Entity}
 	modelType := reflect.TypeOf(model)
-	collection := "${entityLowerFirstCharacter}"
+	collection := "${entity]"
 	mongoService, searchService := NewMongoGenericSearchService(db, modelType, collection, searchResultBuilder, false, "")
-	return &${entity}ServiceImpl{db, db.Collection(collection), mongoService, searchService}
+	return &${Entity}ServiceImpl{db, db.Collection(collection), mongoService, searchService}
 }

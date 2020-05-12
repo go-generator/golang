@@ -1,4 +1,4 @@
-package config
+package ${array_package}
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 type ApplicationContext struct {
 	{begin}
-	${entity}Controller               *controller.${entity}Controller
+	${Name}Controller               *controller.${Name}Controller
 	{end}
 }
 
@@ -32,10 +32,10 @@ func NewApplicationContext(mongoConfig mongo.MongoConfig, ) (*ApplicationContext
 	}
 	activityLogService := impl.NewActivityLogServiceImpl(mongoDb)
 	{begin}
-	${entityLowerFirstCharacter}Service := impl.New${entity}ServiceImpl(mongoDb, mongoSearchResultBuilder)
-	${entityLowerFirstCharacter}Controller := controller.New${entity}Controller(${entityLowerFirstCharacter}Service, activityLogService)
+	${name}Service := impl.New${Name}ServiceImpl(mongoDb, mongoSearchResultBuilder)
+	${name}Controller := controller.New${Name}Controller(${name}Service, activityLogService)
 	{end}
 
 
-	return &ApplicationContext{{begin}${entityLowerFirstCharacter}Controller, {end}}, nil
+	return &ApplicationContext{{begin}${name}Controller, {end}}, nil
 }
