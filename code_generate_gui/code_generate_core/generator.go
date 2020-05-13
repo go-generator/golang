@@ -47,30 +47,25 @@ var (
 
 func ShareMapInitF(packageName, projectName string) map[string]string {
 	return map[string]string{
-		"${package_name}": packageName,
-		"${projectName}":  projectName,
-		"${ProjectName}":  strings.Title(projectName),
+		"package_name": packageName,
+		"projectName":  projectName,
+		"ProjectName":  strings.Title(projectName),
 	}
 }
 func ArrMapInitF(entityList []string) []map[string]string {
 	var mapList []map[string]string
-	for _, v1 := range entityList {
-		tmp := templ.BuildNames(v1)
-		myMap := make(map[string]string)
-		for k, v := range tmp {
-			myMap["${"+k+"}"] = v
-		}
-		mapList = append(mapList, myMap)
+	for _,v:=range entityList{
+		mapList=append(mapList,templ.BuildNames(v))
 	}
 	return mapList
 }
 func FullMapInitF(env string, entity string) map[string]string {
 	return map[string]string{
-		"${static_package}": env,
-		"${projectName}":    projectName,
-		"${ProjectName}":    strings.Title(projectName),
-		"${Entity}":         entity,
-		"${entity}":         strings.ToLower(string(entity[0])) + entity[1:],
+		"static_package": env,
+		"projectName":    projectName,
+		"ProjectName":    strings.Title(projectName),
+		"Entity":         entity,
+		"entity":         strings.ToLower(string(entity[0])) + entity[1:],
 	}
 }
 func EnvTemplateF(template string, fullMap map[string]string) string {
@@ -102,6 +97,19 @@ func ArrayTemplateF(template string, share map[string]string, arr []map[string]s
 	}
 	return text
 }
+type DefaultEntityTemplate struct {
+}
+
+func (t *DefaultEntityTemplate) Merge(ctx context.Context, template string, share map[string]string, parent map[string]string, fields []map[string]string) string {
+	s := template
+	for k, v := range share {
+		s = strings.ReplaceAll(s, "${env:"+k+"}", v)
+	}
+	for k, v := range parent {
+		s = strings.ReplaceAll(s, "${"+k+"}", v)
+	}
+	return s
+}
 
 func InputJsonFileToInputStruct(filename string) string {
 	byteValue, err := ioutil.ReadFile(filename)
@@ -123,6 +131,7 @@ func InputStringToInputStruct(guiInput string) string {
 	return ""
 }
 
+
 func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
 	output.RootPath = defaultRootPath
@@ -140,9 +149,9 @@ func InputStructToOutputString(result *string) string {
 				return err.Error()
 			}
 			template := string(content)
-			//for j := range input.Folders[k].Entities {
-			//	text := EnvTemplateF(template, FullMapInitF(CleanEnv, input.Folders[k].Entities[j]))
-			//	filename := FileNameConverter(input.Folders[k].Entities[j], input.Folders[k].Environments[i])
+			//for j := range input.Folders[k].Collection {
+			//	text := EnvTemplateF(template, FullMapInitF(CleanEnv, input.Folders[k].Collection[j]))
+			//	filename := FileNameConverter(input.Folders[k].Collection[j], input.Folders[k].Environments[i])
 			//	output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Environments[i], "_", "-") + "/" + filename, text})
 			//}
 			var t templ.DefaultStaticTemplate
@@ -166,17 +175,47 @@ func InputStructToOutputString(result *string) string {
 				return err.Error()
 			}
 			template := string(content)
-			//text := ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Entities))
+			//text := ArrayTemplateF(template, ShareMapInitF(CleanEnv), ArrMapInitF(input.Folders[k].Collection))
 			//filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Arrays[i]+"s")
 			//output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Arrays[i], "_", "-") + "/" + filename, text})
 			t := templ.NewArrayTemplate("${begin}", "${end}")
-			text := t.Array(context.Background(), template, ShareMapInitF(CleanEnv, projectName), ArrMapInitF(input.Folders[k].Entities))
+			text := t.Array(context.Background(), template, ShareMapInitF(CleanEnv, projectName), ArrMapInitF(input.Folders[k].Collection))
 			filename := FileNameConverter(strings.ToUpper(output.ProjectName[:1])+output.ProjectName[1:], input.Folders[k].Arrays[i]+"s")
 			parentFolder := strings.ReplaceAll(input.Folders[k].Arrays[i], "_", "-")
 			if CleanEnv == "main" || CleanEnv == "go.mod" {
 				parentFolder = ""
 			}
 			output.Files = append(output.Files, iou.File{parentFolder + "/" + filename, text})
+		}
+		for i := range input.Folders[k].Entities {
+			//Convert RawEnv to Model
+			tmp := strings.LastIndex(input.Folders[k].Entities[i], "/")
+			CleanEnv := input.Folders[k].Entities[i][tmp+1:]
+
+			//READ THE TEMPLATE FILES
+			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + CleanEnv + ".txt")
+			if err != nil {
+				return err.Error()
+			}
+			template := string(content)
+			//for j := range input.Folders[k].Collection {
+			//	text := EnvTemplateF(template, FullMapInitF(CleanEnv, input.Folders[k].Collection[j]))
+			//	filename := FileNameConverter(input.Folders[k].Collection[j], input.Folders[k].Entities[i])
+			//	output.Files = append(output.Files, iou.File{strings.ReplaceAll(input.Folders[k].Entities[i], "_", "-") + "/" + filename, text})
+			//}
+			for j := range input.Folders[k].Collection {
+				var t templ.EntityTemplate
+				t= &DefaultEntityTemplate{}
+				text := t.Merge(context.Background(), template, ShareMapInitF(CleanEnv, projectName),templ.BuildNames(input.Folders[k].Collection[j]),[]map[string]string{})
+				filename := FileNameConverter(input.Folders[k].Collection[j], input.Folders[k].Entities[i])
+				parentFolder := strings.ReplaceAll(input.Folders[k].Entities[i], "_", "-")
+				if CleanEnv == "main" || CleanEnv == "go.mod" {
+					parentFolder = ""
+				}
+				output.Files = append(output.Files, iou.File{parentFolder + "/" + filename, text})
+			}
+
+
 		}
 		//FileDetailsToOutput(model.FilesDetails{
 		//	//Model: "model",

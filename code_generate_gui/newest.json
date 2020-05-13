@@ -1,23 +1,59 @@
 {
-  "folders": [
-    {
-      "environments": [
-        "main",
-        "go.mod"
+  "project": {
+	   env: {
+	      "resource": "resource",
+	      "config": "config",
+		  "route": "route",
+		  "controller": "controller",
+		  "service": "service",
+         "search_model": "search_model",
+		  "service_impl": "service_impl",
+	   },
+       "statics": [
+	    {
+           name: "config",
+		   file: "${resource}/application.yml",
+		},
+	    {
+           name: "main",
+		   file: "main.go",
+		},
+		{
+           name: "go_mod",
+		   file: "go.mod",
+		}
       ],
-      "arrays": [
-        "config",
-        "route"
-      ],
-      "entities": [
-        "search_model",
-        "controller",
-        "service/impl",
-        "service"
-      ],
-      "collection": [
+	  "collection": [
         "Book",
         "BookCategory"
+      ],
+      "arrays": [
+		{
+           name: "application_context",
+		   file: "${config}/application_context.go",
+		},
+		{
+           name: "route",
+		   file: "${route}/$routes.go",
+		}
+      ],
+      "entities": [
+	    {
+           name: "search_model",
+		   file: "${env:search_model}/${raw}_search_model.go",
+		},
+		{
+           name: "controller",
+		   file: "${env:controller}/${raw}_controller.go",
+		},
+		{
+           name: "service",
+		   file: "${env:service}/${raw}_service.go",
+		},
+		{
+           name: "service_impl",
+		   file: "${env:service}/impl/${raw}_service_impl.go",
+		},
       ],
       "models": [
         {
@@ -97,5 +133,4 @@
         }
       ]
     }
-  ]
 }
