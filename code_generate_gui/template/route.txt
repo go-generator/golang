@@ -1,4 +1,4 @@
-package ${package_name}
+package ${route}
 
 import (
 	"${projectName}/config"

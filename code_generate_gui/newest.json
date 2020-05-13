@@ -1,136 +1,138 @@
 {
   "project": {
-	   env: {
-	      "resource": "resource",
-	      "config": "config",
-		  "route": "route",
-		  "controller": "controller",
-		  "service": "service",
-         "search_model": "search_model",
-		  "service_impl": "service_impl",
-	   },
-       "statics": [
-	    {
-           name: "config",
-		   file: "${resource}/application.yml",
-		},
-	    {
-           name: "main",
-		   file: "main.go",
-		},
-		{
-           name: "go_mod",
-		   file: "go.mod",
-		}
-      ],
-	  "collection": [
-        "Book",
-        "BookCategory"
-      ],
-      "arrays": [
-		{
-           name: "application_context",
-		   file: "${config}/application_context.go",
-		},
-		{
-           name: "route",
-		   file: "${route}/$routes.go",
-		}
-      ],
-      "entities": [
-	    {
-           name: "search_model",
-		   file: "${env:search_model}/${raw}_search_model.go",
-		},
-		{
-           name: "controller",
-		   file: "${env:controller}/${raw}_controller.go",
-		},
-		{
-           name: "service",
-		   file: "${env:service}/${raw}_service.go",
-		},
-		{
-           name: "service_impl",
-		   file: "${env:service}/impl/${raw}_service_impl.go",
-		},
-      ],
-      "models": [
-        {
-          "name": "book",
-          "source": "",
-          "alias": null,
-          "models": null,
-          "arrays": null,
-          "fields": [
-            {
-              "name": "Id",
-              "source": "_id",
-              "type": "string",
-              "id": true
-            },
-            {
-              "name": "Catid",
-              "source": "catid",
-              "type": "string"
-            },
-            {
-              "name": "Comid",
-              "source": "comid",
-              "type": "string"
-            },
-            {
-              "name": "Name",
-              "source": "name",
-              "type": "string"
-            }
-          ]
-        },
-        {
-          "name": "book_category",
-          "source": "",
-          "alias": null,
-          "models": null,
-          "arrays": [
-            {
-              "table": "book",
-              "fields": [
-                {
-                  "column": "catid",
-                  "to": "categoryid"
-                },
-                {
-                  "column": "comid",
-                  "to": "companyid"
-                }
-              ]
-            }
-          ],
-          "fields": [
-            {
-              "name": "Categoryid",
-              "source": "categoryid",
-              "type": "string",
-              "id": true
-            },
-            {
-              "name": "Book",
-              "source": "book",
-              "type": "*[]Book"
-            },
-            {
-              "name": "Companyid",
-              "source": "companyid",
-              "type": "string",
-              "id": true
-            },
-            {
-              "name": "Categoryname",
-              "source": "categoryname",
-              "type": "string"
-            }
-          ]
-        }
-      ]
-    }
+    "env": {
+      "resource": "resource",
+      "config": "config",
+      "route": "route",
+      "controller": "controller",
+      "service": "service",
+      "service_impl": "service_impl",
+      "projectName": "evaluation",
+      "ProjectName": "Evaluation",
+      "package_name": "route"
+    },
+    "statics": [
+      {
+        "name": "main",
+        "file": "main.go"
+      },
+      {
+        "name": "application.yaml",
+        "file": "${resource}/application.yaml"
+      },
+      {
+        "name": "go.mod",
+        "file": "go.mod"
+      }
+    ],
+    "collection": [
+      "Book",
+      "BookCategory"
+    ],
+    "arrays": [
+      {
+        "name": "application_context",
+        "file": "${config}/application_context.go"
+      },
+      {
+        "name": "route",
+        "file": "${route}/routes.go"
+      }
+    ],
+    "entities": [
+      {
+        "name": "search_model",
+        "file": "${env:search_model}/${raw}_search_model.go"
+      },
+      {
+        "name": "controller",
+        "file": "${env:controller}/${raw}_controller.go"
+      },
+      {
+        "name": "service",
+        "file": "${env:service}/${raw}_service.go"
+      },
+      {
+        "name": "service_impl",
+        "file": "${env:service}/impl/${raw}_service_impl.go"
+      }
+    ],
+    "models": [
+      {
+        "name": "book",
+        "source": "",
+        "alias": null,
+        "models": null,
+        "arrays": null,
+        "fields": [
+          {
+            "name": "Id",
+            "source": "_id",
+            "type": "string",
+            "id": true
+          },
+          {
+            "name": "Catid",
+            "source": "catid",
+            "type": "string"
+          },
+          {
+            "name": "Comid",
+            "source": "comid",
+            "type": "string"
+          },
+          {
+            "name": "Name",
+            "source": "name",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "book_category",
+        "source": "",
+        "alias": null,
+        "models": null,
+        "arrays": [
+          {
+            "table": "book",
+            "fields": [
+              {
+                "column": "catid",
+                "to": "categoryid"
+              },
+              {
+                "column": "comid",
+                "to": "companyid"
+              }
+            ]
+          }
+        ],
+        "fields": [
+          {
+            "name": "Categoryid",
+            "source": "categoryid",
+            "type": "string",
+            "id": true
+          },
+          {
+            "name": "Book",
+            "source": "book",
+            "type": "*[]Book"
+          },
+          {
+            "name": "Companyid",
+            "source": "companyid",
+            "type": "string",
+            "id": true
+          },
+          {
+            "name": "Categoryname",
+            "source": "categoryname",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -1,10 +1,10 @@
-package ${env:package_name}
+package ${package_name}
 
 import (
 	"github.com/common-go/search"
 	"github.com/common-go/service"
 )
-type ${name}Service interface {
+type ${Entity}Service interface {
 	service.GenericService
 	search.SearchService
 }

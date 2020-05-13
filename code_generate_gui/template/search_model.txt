@@ -1,9 +1,9 @@
-package ${env:package_name}
+package ${package_name}
 
 import "github.com/common-go/search"
 
-type ${name}SM struct {
+type ${Entity}SM struct {
 	*search.SearchModel
-	${name}Id   string `json:"${name}Id"`
-	${name}Name string `json:"${name}Name"`
+	${Entity}Id   string `json:"${entity]Id"`
+	${Entity}Name string `json:"${entity]Name"`
 }

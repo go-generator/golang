@@ -10,12 +10,6 @@
         "route"
       ],
       "entities": [
-        "search_model",
-        "controller",
-        "service/impl",
-        "service"
-      ],
-      "collection": [
         "Book",
         "BookCategory"
       ],

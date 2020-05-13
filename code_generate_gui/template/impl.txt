@@ -1,23 +1,23 @@
-package ${env:package_name}
+package ${package_name}
 
 import (
-	. "${env:projectName}/model"
+	. "${projectName}/model"
 	. "github.com/common-go/mongo"
 	"go.mongodb.org/mongo-driver/mongo"
 	"reflect"
 )
 
-type ${name}ServiceImpl struct {
+type ${Entity}ServiceImpl struct {
 	database   *mongo.Database
 	collection *mongo.Collection
 	*DefaultGenericService
 	*DefaultSearchService
 }
 
-func New${name}ServiceImpl(db *mongo.Database, searchResultBuilder SearchResultBuilder) *${name}ServiceImpl {
-	var model ${name}
+func New${Entity}ServiceImpl(db *mongo.Database, searchResultBuilder SearchResultBuilder) *${Entity}ServiceImpl {
+	var model ${Entity}
 	modelType := reflect.TypeOf(model)
-	collection := "${name}"
+	collection := "${entity]"
 	mongoService, searchService := NewMongoGenericSearchService(db, modelType, collection, searchResultBuilder, false, "")
-	return &${name}ServiceImpl{db, db.Collection(collection), mongoService, searchService}
+	return &${Entity}ServiceImpl{db, db.Collection(collection), mongoService, searchService}
 }
