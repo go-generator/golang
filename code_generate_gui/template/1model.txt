@@ -1,16 +1,14 @@
 package ${env:model}
 
 type ${self:Name} struct {
-${begin}
-${case id=true}
+${begin|id}
 
 	${Name} ${type} `json:"${name}" gorm:"column:${lower};primary_key" bson:"_id" dynamodbav:"${name}" firestore:"${name}"`
 
-${endcase}
-{case default}
+${end|id}
+${begin|no:id}
 
 	${Name} ${type} `json:"${name},omitempty" gorm:"column:${lower}" bson:"${name},omitempty" dynamodbav:"${name},omitempty" firestore:"${name},omitempty"`
 
-${endcase}
-${end}
+${end|no:id}
 }

@@ -142,7 +142,7 @@ func (t *DefaultGenerator) Generate(ctx context.Context, project metadata.Projec
 		//READ THE TEMPLATE FILES
 		template := templates[v.Name]
 		//CREATE TEXT
-		t := templ.NewArrayTemplate("${begin}", "${end}")
+		t := templ.NewArrayTemplate("${begin}", "${end}", "", "")
 		text := t.Array(context.Background(), template, project.Env, nil, ArrMapInitF(project.Collection))
 		outputFile = append(outputFile, metadata.File{"/" + v.File, text})
 	}
@@ -174,10 +174,12 @@ func (t *DefaultGenerator) Generate(ctx context.Context, project metadata.Projec
 				noPrimaryFields = append(noPrimaryFields, v1)
 			}
 		}
-		t := templ.NewArrayTemplate("${begin|id}", "${end|id}")
-		text := t.Array(context.Background(), template, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(primaryFields))
-		t = templ.NewArrayTemplate("${begin|no:id}", "${end|no:id}")
-		text = t.Array(context.Background(), text, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(noPrimaryFields))
+		//t := templ.NewArrayTemplate("${begin|id}", "${end|id}")
+		//text := t.Array(context.Background(), template, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(primaryFields))
+		//t = templ.NewArrayTemplate("${begin|no:id}", "${end|no:id}")
+		//text = t.Array(context.Background(), text, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(noPrimaryFields))
+		t := templ.NewArrayTemplate("${begin", "${end}", "${case ", "${endcase}")
+		text := t.Array(context.Background(), template, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(v.Fields))
 		outputFile = append(outputFile, metadata.File{project.Env["model"] + "/" + v.Name + ".go", text})
 	}
 	return outputFile
