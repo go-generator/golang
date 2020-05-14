@@ -1,6 +1,14 @@
-package model
+package ${env:model}
 
-type {{.StructName}} struct {
-    {{range $element := .IDFields}}{{$element.Name}} {{$element.Type}} {{$element.Name | AddJsonTag}}{{$element.Name | AddBsonTag}}{{$element.Name | AddGormPrimaryTag}} {{end}}
-    {{range $element := .Fields}}{{$element.Name}} {{$element.Type}} {{$element.Name | AddJsonTag}}{{$element.Name | AddBsonTag}}{{$element.Name | AddGormTag}} {{end}}
+type ${self:Name} struct {
+${begin|id}
+
+	${Name} ${type} `json:"${name}" gorm:"column:${lower};primary_key" bson:"_id" dynamodbav:"${name}" firestore:"${name}"`
+
+${end|id}
+${begin|no:id}
+
+	${Name} ${type} `json:"${name},omitempty" gorm:"column:${lower}" bson:"${name},omitempty" dynamodbav:"${name},omitempty" firestore:"${name},omitempty"`
+
+${end|no:id}
 }

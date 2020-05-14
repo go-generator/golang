@@ -1,7 +1,7 @@
-package ${route}
+package ${env:route}
 
 import (
-	"${projectName}/config"
+	"${env:projectName}/config"
     "github.com/common-go/mongo"
     "github.com/labstack/echo"
     "github.com/labstack/echo/middleware"
@@ -11,7 +11,7 @@ type EvaRoutes struct {
 	Router *echo.Echo
 }
 
-func New${ProjectName}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*EvaRoutes, error) {
+func New${env:ProjectName}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*EvaRoutes, error) {
 	applicationContext, err := config.NewApplicationContext(mongoConfig,)
 	if err != nil {
 		return nil, err

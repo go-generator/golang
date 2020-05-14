@@ -1,0 +1,6 @@
+package model
+
+type {{.StructName}} struct {
+    {{range $element := .IDFields}}{{$element.Name}} {{$element.Type}} {{$element.Name | AddJsonTag}}{{$element.Name | AddBsonTag}}{{$element.Name | AddGormPrimaryTag}} {{end}}
+    {{range $element := .Fields}}{{$element.Name}} {{$element.Type}} {{$element.Name | AddJsonTag}}{{$element.Name | AddBsonTag}}{{$element.Name | AddGormTag}} {{end}}
+}

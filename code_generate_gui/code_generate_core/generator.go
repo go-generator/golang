@@ -15,8 +15,9 @@ import (
 	"sync"
 	"text/template"
 
-	iou "github.com/go-generator/io"
+	"github.com/go-generator/metadata"
 	templ "github.com/go-generator/template"
+	"github.com/go-generator/generator"
 	"github.com/sqweek/dialog"
 	"golang/code_generate_gui/code_generate_core/model"
 )
@@ -56,6 +57,13 @@ func ArrMapInitF(entityList []string) []map[string]string {
 	var mapList []map[string]string
 	for _, v := range entityList {
 		mapList = append(mapList, templ.BuildNames(v))
+	}
+	return mapList
+}
+func ModelArrMapInitF(fieldList []metadata.Field) []map[string]string {
+	var mapList []map[string]string
+	for _, v := range fieldList {
+		mapList = append(mapList, templ.BuildFields(v.Name, v.Id, 0, v.Type))
 	}
 	return mapList
 }
@@ -112,6 +120,69 @@ func (t *DefaultEntityTemplate) Merge(ctx context.Context, template string, shar
 	return s
 }
 
+type DefaultGenerator struct {
+}
+
+func (t *DefaultGenerator) Generate(ctx context.Context, project metadata.Project, templates map[string]string, types map[string]string) []metadata.File {
+	var outputFile []metadata.File
+	for _, v := range project.Statics {
+		//COMPLETE THE FILENAME
+		var t templ.DefaultStaticTemplate
+		v.File = t.Generate(context.Background(), v.File, project.Env)
+		//READ THE TEMPLATE FILES
+		template := templates[v.Name]
+		//CREATE TEXT
+		text := t.Generate(context.Background(), template, project.Env)
+		outputFile = append(outputFile, metadata.File{"/" + v.File, text})
+	}
+	for _, v := range project.Arrays {
+		//COMPLETE THE FILENAME
+		var t1 templ.DefaultStaticTemplate
+		v.File = t1.Generate(context.Background(), v.File, project.Env)
+		//READ THE TEMPLATE FILES
+		template := templates[v.Name]
+		//CREATE TEXT
+		t := templ.NewArrayTemplate("${begin}", "${end}")
+		text := t.Array(context.Background(), template, project.Env, nil, ArrMapInitF(project.Collection))
+		outputFile = append(outputFile, metadata.File{"/" + v.File, text})
+	}
+	for _, v := range project.Entities {
+		for _, c := range project.Collection {
+			buildNamesMap := templ.BuildNames(c)
+			//COMPLETE THE FILENAME
+			var t templ.EntityTemplate
+			t = &DefaultEntityTemplate{}
+			tmpFile := t.Merge(context.Background(), v.File, project.Env, buildNamesMap, nil)
+
+			//READ THE TEMPLATE FILES
+			template := templates[v.Name]
+			//CREATE TEXT
+			text := t.Merge(context.Background(), template, project.Env, buildNamesMap, nil)
+			outputFile = append(outputFile, metadata.File{"/" + tmpFile, text})
+		}
+	}
+	for _, v := range project.Models {
+		//READ THE TEMPLATE FILES
+		template := templates["model"]
+		//CREATE TEXT
+		var primaryFields []metadata.Field
+		var noPrimaryFields []metadata.Field
+		for _, v1 := range v.Fields {
+			if v1.Id {
+				primaryFields = append(primaryFields, v1)
+			} else {
+				noPrimaryFields = append(noPrimaryFields, v1)
+			}
+		}
+		t := templ.NewArrayTemplate("${begin|id}", "${end|id}")
+		text := t.Array(context.Background(), template, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(primaryFields))
+		t = templ.NewArrayTemplate("${begin|no:id}", "${end|no:id}")
+		text = t.Array(context.Background(), text, project.Env, templ.BuildNames(v.Name), ModelArrMapInitF(noPrimaryFields))
+		outputFile = append(outputFile, metadata.File{project.Env["model"] + "/" + v.Name + ".go", text})
+	}
+	return outputFile
+}
+
 func InputJsonFileToInputStruct(filename string) string {
 	byteValue, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -131,68 +202,50 @@ func InputStringToInputStruct(guiInput string) string {
 	}
 	return ""
 }
-
+func TemplateMapInitF(project metadata.Project) (map[string]string, error) {
+	templateMap := make(map[string]string)
+	for _, v := range project.Statics {
+		content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + v.Name + ".txt")
+		if err != nil {
+			return nil, err
+		}
+		templateMap[v.Name] = string(content)
+	}
+	for _, v := range project.Arrays {
+		content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + v.Name + ".txt")
+		if err != nil {
+			return nil, err
+		}
+		templateMap[v.Name] = string(content)
+	}
+	for _, v := range project.Entities {
+		content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + v.Name + ".txt")
+		if err != nil {
+			return nil, err
+		}
+		templateMap[v.Name] = string(content)
+	}
+	content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + "model.txt")
+	if err != nil {
+		return nil, err
+	}
+	templateMap["model"] = string(content)
+	return templateMap, nil
+}
 func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
 	output.RootPath = defaultRootPath
-	output.ProjectName = projectName
+	output.ProjectName = input.Project.Env["projectName"]
 	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
-	for _, v := range input.Project.Statics {
-		//COMPLETE THE FILENAME
-		var t templ.DefaultStaticTemplate
-		v.File = t.Generate(context.Background(), v.File, input.Project.Env)
-		//READ THE TEMPLATE FILES
-		content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + v.Name + ".txt")
-		if err != nil {
-			return err.Error()
-		}
-		template := string(content)
-		//CREATE TEXT
-		text := t.Generate(context.Background(), template, input.Project.Env)
-		output.Files = append(output.Files, iou.File{"/"+v.File, text})
+	templateMap, err := TemplateMapInitF(input.Project)
+	if err != nil {
+		return err.Error()
 	}
-	for _, v := range input.Project.Arrays {
-		//COMPLETE THE FILENAME
-		var t1 templ.DefaultStaticTemplate
-		v.File = t1.Generate(context.Background(), v.File, input.Project.Env)
-		//READ THE TEMPLATE FILES
-		content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + v.Name + ".txt")
-		if err != nil {
-			return err.Error()
-		}
-		template := string(content)
-		//CREATE TEXT
-		t := templ.NewArrayTemplate("${begin}", "${end}")
-		text := t.Array(context.Background(), template, nil, input.Project.Env, ArrMapInitF(input.Project.Collection))
-		output.Files = append(output.Files, iou.File{"/"+v.File, text})
-	}
-	for _, v := range input.Project.Entities {
-		for k, v1 := range input.Project.Env {
-			v.File = strings.ReplaceAll(v.File, "${env:"+k+"}", v1)
-		}
-		for _, c := range input.Project.Collection {
-			buildNamesMap:= templ.BuildNames(c)
-			//COMPLETE THE FILENAME
-			var t templ.EntityTemplate
-			t= &DefaultEntityTemplate{}
-			tmpFile := t.Merge(context.Background(), v.File, input.Project.Env,buildNamesMap,nil) //
 
-			//READ THE TEMPLATE FILES
-			content, err := ioutil.ReadFile(defaultTemplateFolder + string(os.PathSeparator) + v.Name + ".txt")
-			if err != nil {
-				return err.Error()
-			}
-			template := string(content)
-			//CREATE TEXT
-			text := t.Merge(context.Background(), template, input.Project.Env,buildNamesMap,nil) //
-			output.Files = append(output.Files, iou.File{"/" + tmpFile, text})
-		}
-	}
-	//FileDetailsToOutput(model.FilesDetails{
-	//	//Model: "model",
-	//	Files: input.Folders[k].Models,
-	//}, &output)
-
+	var t generator.Generator
+	t = &DefaultGenerator{}
+	outputFiles := t.Generate(context.Background(), input.Project, templateMap, nil)
+	output.Files = outputFiles
 	//OUTPUT STRUCT TO STRING(JSON)
 	file, err := json.MarshalIndent(output, "", " ")
 	if err != nil {
@@ -445,7 +498,7 @@ func ShellExecutor(program string, arguments []string) ([]byte, error) {
 }
 
 func FileDetailsToOutput(content model.FilesDetails, out *model.Output) {
-	var file iou.File
+	var file metadata.File
 	for _, k := range content.Files {
 		out.OutFile = append(output.OutFile, WriteStruct(&k))
 		file.Name = content.Model + "/" + ToLower(k.Name) + ".go"

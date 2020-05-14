@@ -1,10 +1,10 @@
-package ${config}
+package ${env:config}
 
 import (
 	"context"
-	"${projectName}/controller"
+	"${env:projectName}/controller"
 
-	"${projectName}/service/impl"
+	"${env:projectName}/service/impl"
 
 	"github.com/common-go/mongo"
 )
