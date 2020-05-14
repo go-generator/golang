@@ -1,26 +1,26 @@
-package ${package_name}
+package ${env:controller}
 
 import (
-	"${projectName}/handler"
-    "${projectName}/model"
-    "${projectName}/search-model"
-    "${projectName}/service"
+	"${env:projectName}/handler"
+    "${env:projectName}/model"
+    "${env:projectName}/search-model"
+    "${env:projectName}/service"
     . "github.com/common-go/echo"
     "reflect"
 )
 
-type ${Entity}Controller struct {
+type ${Name}Controller struct {
 	*GenericController
 	*SearchController
 }
 
 
-func New${Entity}Controller(${entity}Service service.${Entity}Service, logService ActivityLogService) *${Entity}Controller {
-	var ${entity}Model model.${Entity}
-	modelType := reflect.TypeOf(${entity}Model)
-	searchModelType := reflect.TypeOf(search_model.${Entity}SM{})
-	idNames := ${entity}Service.GetIdNames()
+func New${Name}Controller(${Name}Service service.${Name}Service, logService ActivityLogService) *${Name}Controller {
+	var ${Name}Model model.${Name}
+	modelType := reflect.TypeOf(${Name}Model)
+	searchModelType := reflect.TypeOf(search_model.${Name}SM{})
+	idNames := ${Name}Service.GetIdNames()
 	controlModelHandler := handler.NewControlModelHandler(idNames)
-	genericController, searchController:= NewGenericSearchController(${entity}Service, modelType, controlModelHandler, ${entity}Service, searchModelType,nil, logService, true, "")
-	return &${Entity}Controller{GenericController: genericController, SearchController: searchController}
+	genericController, searchController:= NewGenericSearchController(${Name}Service, modelType, controlModelHandler, ${Name}Service, searchModelType,nil, logService, true, "")
+	return &${Name}Controller{GenericController: genericController, SearchController: searchController}
 }
