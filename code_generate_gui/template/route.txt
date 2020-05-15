@@ -24,7 +24,7 @@ func New${env:ProjectName}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (
 
     ${begin}
 	${name}Controller := applicationContext.${Name}Controller
-	${name}Path := "/${projectName}/${name}"
+	${name}Path := "/${env:projectName}/${name}"
 	e.GET(${name}Path, ${name}Controller.GetAll())
 	e.POST(${name}Path, ${name}Controller.Insert())
 	e.GET(${name}Path+"/:id", ${name}Controller.GetById())

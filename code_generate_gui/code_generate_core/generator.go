@@ -6,20 +6,18 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/json"
+	"github.com/go-generator/generator"
+	iou "github.com/go-generator/io"
+	"github.com/go-generator/metadata"
+	templ "github.com/go-generator/template"
+	"github.com/sqweek/dialog"
+	"golang/code_generate_gui/code_generate_core/model"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
-	"text/template"
-
-	"github.com/go-generator/metadata"
-	templ "github.com/go-generator/template"
-	"github.com/go-generator/generator"
-	"github.com/sqweek/dialog"
-	"golang/code_generate_gui/code_generate_core/model"
 )
 
 const (
@@ -278,16 +276,34 @@ func FileNameConverter(s string, path string) string {
 
 	return s3[1:] + "_" + path + ext
 }
-
 func OutputStructToFiles(directory string) string {
-	fl := output
-	log.Println(fl)
-	//CREATE FOLDER ON DISK
-	if len(output.Files) == 0 {
-		return "0 File Created On Disk"
+	err := iou.Save(directory, output.Files)
+	if err != nil {
+		return err.Error()
 	}
+	return ""
+}
+func OutputStructToZip() string {
+	if output.Files == nil {
+		file, err := dialog.File().Filter("json file", "json").Load()
+		res := ""
+		if err != nil {
+			return err.Error()
+		}
+		GenerateFromFile(templateDir, projectName, file, &res)
+	}
+	directory, err := dialog.File().Filter("zip file", "zip").Title("Export to zip").Save()
+	if err != nil {
+		return err.Error()
+	}
+	fileName := output.ProjectName
 	if directory != "" {
-		output.RootPath = directory
+		tmp := strings.LastIndex(directory, string(os.PathSeparator))
+		fileName = directory[tmp+1:]
+		fileName = strings.TrimSuffix(fileName, ".zip")
+		if tmp != -1 {
+			output.RootPath = directory[:tmp]
+		}
 	}
 	if output.RootPath != "" {
 		err := os.MkdirAll(output.RootPath, os.ModePerm)
@@ -296,75 +312,13 @@ func OutputStructToFiles(directory string) string {
 		}
 		output.RootPath += string(os.PathSeparator)
 	}
-	var allFiles []string
-	modelTmpl := filepath.Join(defaultTemplateFolder, "model.txt")
-	funcMap := template.FuncMap{
-		"AddJsonTag":        AddJSONTag,
-		"AddBsonTag":        AddBSONTag,
-		"AddGormTag":        AddGORMTag,
-		"AddGormPrimaryTag": AddGORMPrimaryTag,
-	}
-	tmplName := filepath.Base(modelTmpl)
-	mTmpl := template.New(tmplName).Funcs(funcMap)
-	mT, err := mTmpl.ParseFiles(modelTmpl)
+	err = iou.SaveToZip(output.RootPath+fileName+".zip", output.Files)
 	if err != nil {
 		return err.Error()
 	}
-	for i := range output.OutFile {
-		err := os.MkdirAll(filepath.Join(output.RootPath, "model"), os.ModePerm)
-		if err != nil {
-			return err.Error()
-		}
-		f, err := os.Create(filepath.Join(output.RootPath, "model", output.OutFile[i].Name+".go"))
-		if err != nil {
-			return err.Error()
-		}
-		err = mT.Execute(f, output.OutFile[i])
-		if err != nil {
-			return err.Error()
-		}
-		allFiles = append(allFiles, f.Name())
-	}
-	for i := range output.Files {
-		if output.Files[i].Content != "" {
-			tmpPath := output.RootPath + output.Files[i].Name
-			tmp := strings.LastIndex(tmpPath, "/")
-			tmpPath = tmpPath[:tmp]
-			err := os.MkdirAll(tmpPath, os.ModePerm)
-			if err != nil {
-				return err.Error()
-			}
-			f, err := os.Create(output.RootPath + output.Files[i].Name)
-			if err != nil {
-				return err.Error()
-			}
-			_, err = f.WriteString(output.Files[i].Content)
-			if err != nil {
-				return err.Error()
-			}
-			allFiles = append(allFiles, f.Name())
-			err = f.Close()
-			if err != nil {
-				return err.Error()
-			}
-		}
-	}
-	var wg sync.WaitGroup
-	for i := range allFiles {
-		wg.Add(1)
-		go func(dir string, wtg *sync.WaitGroup) {
-			defer wtg.Done()
-			_, err := ShellExecutor("goimports", []string{"-w", dir})
-			if err != nil {
-				log.Println(err)
-			}
-		}(allFiles[i], &wg)
-	}
-	wg.Wait()
 	return ""
 }
-
-func OutputStructToZip() string {
+func OldOutputStructToZip() string {
 	if output.Files == nil {
 		file, err := dialog.File().Filter("json file", "json").Load()
 		res := ""
