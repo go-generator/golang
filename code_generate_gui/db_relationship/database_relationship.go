@@ -1,6 +1,7 @@
 package db_relationship
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -17,6 +18,8 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/widget"
 	. "github.com/go-generator/metadata"
+	"github.com/go-generator/database"
+	newConfig "github.com/go-generator/database/db_config"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
@@ -227,7 +230,7 @@ func JsonUI(env, filePath string, conn *gorm.DB, dc *DatabaseConfig, rt []Relati
 	return err
 }
 
-func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
+func OldWriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
 	err := dc.ValidateDatabaseConfig()
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
@@ -240,6 +243,60 @@ func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize boo
 	}
 	rl, jt := DatabaseRelationships(dc, conn)
 	err = JsonUI(env, filename+".json", conn, dc, rl, jt, optimize)
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
+		return
+	}
+	ShowWindows(app, "Success", "Generated Database Json File Successfully")
+}
+func SaveMetadataJson(env, filePath string, metaDataList []Model) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+	var (
+		err    error
+		files  FilesDetails
+		output Folders
+		entity []string
+	)
+	files.Env = []string{"search_model", "config", "controller", "service/impl", "route", "service"}
+	files.Model = env
+	files.Files = metaDataList
+	for _, v := range files.Files {
+		entity = append(entity, StandardizeName(v.Name))
+	}
+	files.Entity = entity
+	output.ModelFile = append(output.ModelFile, files)
+	data, err := json.MarshalIndent(&output, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filePath, data, 0644) // Create and write files
+	if err != nil {
+		return err
+	}
+	return err
+}
+func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
+	err := dc.ValidateDatabaseConfig()
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
+		return
+	}
+
+	filename, err := dialog.File().Filter("json files", "json").Title("Save As").Save()
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
+		return
+	}
+	var t database.MetadataService
+	t = &database.DefaultMetadataService{Config: newConfig.DatabaseConfig{
+		Dialect:  dc.Dialect,
+		Host:     dc.Host,
+		Port:     dc.Port,
+		Database: dc.Database,
+		User:     dc.User,
+		Password: dc.Password,
+	}}
+	metadataList := t.ToMetadata(context.Background(), conn)
+	err = SaveMetadataJson(env, filename, metadataList)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
