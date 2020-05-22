@@ -100,7 +100,7 @@ func InputJsonFileToInputStruct(filename string) string {
 	if err != nil {
 		return err.Error()
 	}
-	input.Project.Env = project.EnvInit(input.Project.Env)
+	input.Project.Env = project.EnvInit(input.Project.Env, "hotelManagement")
 	return ""
 }
 

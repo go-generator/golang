@@ -1,10 +1,10 @@
-package ${env:controller}
+package ${env:controller_raw}
 
 import (
-	"${env:projectName}/handler"
-    "${env:projectName}/model"
-    "${env:projectName}/search-model"
-    "${env:projectName}/service"
+	"${env:project_name}/handler"
+    "${env:project_name}/model"
+    "${env:project_name}/search-model"
+    "${env:project_name}/service"
     . "github.com/common-go/echo"
     "reflect"
 )

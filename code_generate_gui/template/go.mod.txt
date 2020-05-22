@@ -1,4 +1,4 @@
-module ${projectName}
+module ${env:project_name}
 
 go 1.13
 

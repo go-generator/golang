@@ -1,4 +1,4 @@
-package ${env:model}
+package ${env:model_raw}
 
 type ${self:Name} struct {
 ${begin}

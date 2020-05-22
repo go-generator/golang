@@ -6,8 +6,9 @@
       "route": "route",
       "controller": "controller",
       "service": "service",
-      "service_impl": "service_impl",
-      "model": "model"
+      "impl": "impl",
+      "model": "model",
+      "main": "main"
     },
     "statics": [
       {
@@ -16,7 +17,7 @@
       },
       {
         "name": "application.yaml",
-        "file": "${resource}/application.yaml"
+        "file": "${env:resource_raw}/application.yaml"
       },
       {
         "name": "go.mod",
@@ -30,18 +31,26 @@
     "arrays": [
       {
         "name": "application_context",
-        "file": "${config}/application_context.go"
+        "file": "${env:config_raw}/application_context.go"
       },
       {
         "name": "route",
-        "file": "${route}/routes.go"
+        "file": "${env:route_raw}/routes.go"
       }
     ],
     "entities": [
 
       {
         "name": "controller",
-        "file": "${env:controller}/${raw}_controller.go"
+        "file": "${env:controller_raw}/${raw}_controller.go"
+      },
+      {
+        "name": "service",
+        "file": "${env:service_raw}/${raw}_service.go"
+      },
+      {
+        "name": "impl",
+        "file": "${env:service_raw}/${env:impl_raw}/${raw}_impl.go"
       }
     ],
     "models": [

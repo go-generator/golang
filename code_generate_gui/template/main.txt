@@ -1,4 +1,4 @@
-package ${package_name}
+package ${env:main_raw}
 
 import (
 	"fmt"
@@ -14,12 +14,12 @@ import (
 	"github.com/common-go/config"
 	"github.com/common-go/echo"
 
-	c "${projectName}/config"
-	. "${projectName}/route"
+	c "${env:project_name}/config"
+	. "${env:project_name}/route"
 )
 
 func main() {
-	parentPath := "${projectName}"
+	parentPath := "${env:project_name}"
 	resource := "resource"
 	env := os.Getenv("ENV")
 	var conf c.Root
@@ -27,7 +27,7 @@ func main() {
 	//resourceMap := server.LoadMap(parentPath, resource, env, "resource_map")
 	log.Println(" host ", conf)
 	e := echo.New()
-	route, err := New${ProjectName}Routes(e, conf)
+	route, err := New${env:Project}Routes(e, conf)
 	if err != nil {
 		panic(fmt.Errorf("create route failed"))
 	}
