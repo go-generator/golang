@@ -7,10 +7,7 @@
       "controller": "controller",
       "service": "service",
       "service_impl": "service_impl",
-      "model": "model",
-      "projectName": "evaluation",
-      "ProjectName": "Evaluation",
-      "package_name": "route"
+      "model": "model"
     },
     "statics": [
       {

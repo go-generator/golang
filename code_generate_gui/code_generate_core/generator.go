@@ -9,6 +9,7 @@ import (
 	"github.com/go-generator/generator"
 	iou "github.com/go-generator/io"
 	"github.com/go-generator/metadata"
+	"github.com/go-generator/project"
 	"github.com/sqweek/dialog"
 	"golang/code_generate_gui/code_generate_core/model"
 	"io/ioutil"
@@ -90,8 +91,6 @@ func ArrayTemplateF(template string, share map[string]string, arr []map[string]s
 	return text
 }
 
-
-
 func InputJsonFileToInputStruct(filename string) string {
 	byteValue, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -101,6 +100,7 @@ func InputJsonFileToInputStruct(filename string) string {
 	if err != nil {
 		return err.Error()
 	}
+	input.Project.Env = project.EnvInit(input.Project.Env)
 	return ""
 }
 
