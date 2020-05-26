@@ -3,6 +3,7 @@ package db_relationship
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-generator/project"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,9 +18,9 @@ import (
 	. "./database_models"
 	"fyne.io/fyne"
 	"fyne.io/fyne/widget"
-	. "github.com/go-generator/metadata"
 	"github.com/go-generator/database"
 	newConfig "github.com/go-generator/database/db_config"
+	. "github.com/go-generator/metadata"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/sqweek/dialog"
@@ -249,7 +250,18 @@ func OldWriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize 
 	}
 	ShowWindows(app, "Success", "Generated Database Json File Successfully")
 }
-func SaveMetadataJson(env, filePath string, metaDataList []Model) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+func SaveMetadataJson(projectStruct interface{}, filePath string) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
+	data, err := json.MarshalIndent(&projectStruct, "", " ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filePath, data, 0644) // Create and write files
+	if err != nil {
+		return err
+	}
+	return err
+}
+func oldSaveMetadataJson(env, filePath string, metaDataList []Model) error { //s *SqlTablesData, conn *gorm.DB, tables []string, packageName, output string) {
 	var (
 		err    error
 		files  FilesDetails
@@ -274,19 +286,32 @@ func SaveMetadataJson(env, filePath string, metaDataList []Model) error { //s *S
 	}
 	return err
 }
-func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
+func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool, seperateFile bool) {
 	err := dc.ValidateDatabaseConfig()
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
 	}
-
-	filename, err := dialog.File().Filter("json files", "json").Title("Save As").Save()
+	inFile, err := dialog.File().Filter("json file", "json").Title("Open As").Load()
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
 	}
-	var t database.MetadataService
+	outFile, err := dialog.File().Filter("json files", "json").Title("Save As").Save()
+	if err != nil {
+		ShowWindows(app, "Error", err.Error())
+		return
+	}
+	modelFile := ""
+	if seperateFile {
+		modelFile, err = dialog.File().Filter("json files", "json").Title("Save Model File As").Save()
+		if err != nil {
+			ShowWindows(app, "Error", err.Error())
+			return
+		}
+	}
+
+	var t project.DatabaseAdapter
 	t = &database.DefaultMetadataService{Config: newConfig.DatabaseConfig{
 		Dialect:  dc.Dialect,
 		Host:     dc.Host,
@@ -295,14 +320,66 @@ func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize boo
 		User:     dc.User,
 		Password: dc.Password,
 	}}
-	metadataList := t.ToMetadata(context.Background(), conn)
-	err = SaveMetadataJson(env, filename, metadataList)
+	//metadataList := t.ToMetadata(context.Background(), conn)
+	var u project.ProjectService
+	u = &project.GoMongoProjectService{}
+	projectStruct, err := u.CreateProjectByAdapter(context.Background(), inFile, "hotelManagement", t, conn)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return
 	}
+	if seperateFile {
+		projectStruct.ModelsFile = modelFile
+		err = SaveMetadataJson(projectStruct.Models, modelFile)
+		if err != nil {
+			ShowWindows(app, "Error", err.Error())
+			return
+		}
+		projectStruct.Models = nil
+		err = SaveMetadataJson(projectStruct, outFile)
+		if err != nil {
+			ShowWindows(app, "Error", err.Error())
+			return
+		}
+	} else {
+		err = SaveMetadataJson(projectStruct, outFile)
+		if err != nil {
+			ShowWindows(app, "Error", err.Error())
+			return
+		}
+	}
 	ShowWindows(app, "Success", "Generated Database Json File Successfully")
 }
+
+//func OlderWriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize bool) {
+//	err := dc.ValidateDatabaseConfig()
+//	if err != nil {
+//		ShowWindows(app, "Error", err.Error())
+//		return
+//	}
+//
+//	filename, err := dialog.File().Filter("json files", "json").Title("Save As").Save()
+//	if err != nil {
+//		ShowWindows(app, "Error", err.Error())
+//		return
+//	}
+//	var t project.DatabaseAdapter
+//	t = &database.DefaultMetadataService{Config: newConfig.DatabaseConfig{
+//		Dialect:  dc.Dialect,
+//		Host:     dc.Host,
+//		Port:     dc.Port,
+//		Database: dc.Database,
+//		User:     dc.User,
+//		Password: dc.Password,
+//	}}
+//	metadataList := t.ToMetadata(context.Background(), conn)
+//	err = SaveMetadataJson(env, filename, metadataList)
+//	if err != nil {
+//		ShowWindows(app, "Error", err.Error())
+//		return
+//	}
+//	ShowWindows(app, "Success", "Generated Database Json File Successfully")
+//}
 
 func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.Window {
 	var temp DatabaseConfig
@@ -315,8 +392,12 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 		Width: 640,
 	})
 	var opt bool
+	var sep bool
 	optimizeEntry := widget.NewCheck("Optimization", func(b bool) {
 		opt = b
+	})
+	seperateEntry := widget.NewCheck("Seperate", func(b bool) {
+		sep = b
 	})
 	usernameEntry := widget.NewEntry()
 	usernameEntry.OnChanged = dc.SetUsername
@@ -363,7 +444,7 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 				ShowWindows(app, "Error", err.Error())
 			}
 		}()
-		WriteMetadata(app, dc, conn, opt)
+		WriteMetadata(app, dc, conn, opt, sep)
 		if temp != *dc {
 			err := WriteCacheFile(cache, dc, encryptField)
 			if err != nil {
@@ -379,6 +460,7 @@ func InputUI(dc *DatabaseConfig, app fyne.App, cache, encryptField string) fyne.
 	providerEntry.Refresh()
 	window.SetContent(widget.NewVBox(
 		optimizeEntry,
+		seperateEntry,
 		widget.NewLabel("Provider:"),
 		providerEntry,
 		widget.NewLabel("User:"),

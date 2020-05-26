@@ -38,7 +38,7 @@ func absTemplatePath() string {
 }
 
 var (
-	input       model.Input
+	input       metadata.Project
 	output      model.Output
 	templateDir string
 	projectName string
@@ -100,7 +100,7 @@ func InputJsonFileToInputStruct(filename string) string {
 	if err != nil {
 		return err.Error()
 	}
-	input.Project.Env = project.EnvInit(input.Project.Env, "hotelManagement")
+	input.Env = project.EnvInit(input.Env, "hotelManagement")
 	return ""
 }
 
@@ -115,16 +115,16 @@ func InputStringToInputStruct(guiInput string) string {
 func InputStructToOutputString(result *string) string {
 	//WRITE THE OUT STRUCT
 	output.RootPath = defaultRootPath
-	output.ProjectName = input.Project.Env["projectName"]
+	output.ProjectName = input.Env["projectName"]
 	output.RootPath = strings.TrimSuffix(output.RootPath, "/")
-	templateMap, err := generator.TemplateMapInitF(defaultTemplateFolder, input.Project)
+	templateMap, err := generator.TemplateMapInitF(defaultTemplateFolder, input)
 	if err != nil {
 		return err.Error()
 	}
 
 	var t generator.Generator
-	t = &generator.DefaultGenerator{}
-	outputFiles := t.Generate(context.Background(), input.Project, templateMap, nil)
+	t = &generator.JavaGenerator{}
+	outputFiles := t.Generate(context.Background(), input, templateMap)
 	output.Files = outputFiles
 	//OUTPUT STRUCT TO STRING(JSON)
 	file, err := json.MarshalIndent(output, "", " ")
@@ -294,32 +294,34 @@ func OldOutputStructToZip() string {
 	return ""
 }
 
+//func OldGenerateFromString(temp, project, guiInput string, outputString *string) string {
+//	input =
+//	output = model.Output{}
+//	if temp != "" {
+//		templateDir = temp
+//	} else {
+//		templateDir = defaultTemplateFolder
+//	}
+//	if project != "" {
+//		projectName = project
+//	} else {
+//		projectName = defaultProjectName
+//	}
+//	err := InputStringToInputStruct(guiInput)
+//	if err != "" {
+//		return err
+//	}
+//	err = InputStructToOutputString(outputString)
+//	if err != "" {
+//		return err
+//	}
+//	return ""
+//}
 func GenerateFromString(temp, project, guiInput string, outputString *string) string {
-	input = model.Input{}
-	output = model.Output{}
-	if temp != "" {
-		templateDir = temp
-	} else {
-		templateDir = defaultTemplateFolder
-	}
-	if project != "" {
-		projectName = project
-	} else {
-		projectName = defaultProjectName
-	}
-	err := InputStringToInputStruct(guiInput)
-	if err != "" {
-		return err
-	}
-	err = InputStructToOutputString(outputString)
-	if err != "" {
-		return err
-	}
 	return ""
 }
-
 func GenerateFromFile(temp, project, filename string, outputString *string) string {
-	input = model.Input{}
+	input = metadata.Project{}
 	output = model.Output{}
 	if temp != "" {
 		templateDir = temp
