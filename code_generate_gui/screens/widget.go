@@ -2,6 +2,7 @@ package screens
 
 import (
 	"fmt"
+	"github.com/go-generator/metadata"
 	"time"
 
 	"../json_generator"
@@ -104,6 +105,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			cursorRow.SetText(err)
 		}
 	})
+	var output metadata.Output
 	openFileButton := widget.NewButton("Generate Go Template From Metadata Json...", func() {
 		filename, err := dialog.File().Filter("json file", "json").Load()
 		if err != nil {
@@ -111,7 +113,8 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			return
 		} else {
 			result := ""
-			err := code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result)
+			err := ""
+			output, err = code_generate_core.GenerateFromFile(templateDir.Text, projectName.Text, filename, &result, "java")
 			if err == "" {
 				largeText2.SetText(result)
 				cursorRow.SetText("Creating Files...")
@@ -121,7 +124,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 			}
 		}
 		directory, err := dialog.Directory().Title("Save Generated Files In...").Browse()
-		err1 := code_generate_core.OutputStructToFiles(directory)
+		err1 := code_generate_core.OutputStructToFiles(directory, output)
 		if err1 != "" {
 			cursorRow.SetText(err1)
 		} else {
@@ -130,7 +133,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	})
 
 	saveButton := widget.NewButton("Save Files (to main.go folder or input.json folder)", func() {
-		err := code_generate_core.OutputStructToFiles("")
+		err := code_generate_core.OutputStructToFiles("", output)
 		if err != "" {
 			cursorRow.SetText(err)
 		} else {
@@ -145,15 +148,15 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	//		cursorRow.SetText("Zip Created On Disk")
 	//	}
 	//})
-	zipAsButton := widget.NewButton("Generate And Zip From Metadata Json As...", func() {
-		cursorRow.SetText("Creating Zip File...")
-		err := code_generate_core.OutputStructToZip()
-		if err != "" {
-			cursorRow.SetText(err)
-		} else {
-			cursorRow.SetText("Zip Created On Disk")
-		}
-	})
+	//zipAsButton := widget.NewButton("Generate And Zip From Metadata Json As...", func() {
+	//	cursorRow.SetText("Creating Zip File...")
+	//	err := code_generate_core.OutputStructToZip()
+	//	if err != "" {
+	//		cursorRow.SetText(err)
+	//	} else {
+	//		cursorRow.SetText("Zip Created On Disk")
+	//	}
+	//})
 	modelJsonGenerator := widget.NewButton("Generate Database Metadata Json Description", func() {
 		wi, err := json_generator.RunWithUI(app, cachePath)
 		if err == nil {
@@ -177,7 +180,7 @@ func makeFormTab(app fyne.App, cachePath string) fyne.CanvasObject {
 	list.Append(okButton)
 	list.Append(saveButton)
 	list.Append(openFileButton)
-	list.Append(zipAsButton)
+	//list.Append(zipAsButton)
 	list2.Append(projectName)
 	list2.Append(largeText)
 	list.Append(modelJsonGenerator)

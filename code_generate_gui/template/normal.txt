@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.lang.String;
 
 @Entity
-
+${self:IdClassJavaAnnotation}
 public class ${self:Name} {
 ${begin}
     ${case id=true}

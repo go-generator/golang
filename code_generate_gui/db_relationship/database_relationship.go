@@ -323,7 +323,7 @@ func WriteMetadata(app fyne.App, dc *DatabaseConfig, conn *gorm.DB, optimize boo
 	//metadataList := t.ToMetadata(context.Background(), conn)
 	var u project.ProjectService
 	u = &project.GoMongoProjectService{}
-	projectStruct, err := u.CreateProjectByAdapter(context.Background(), inFile, "hotelManagement", t, conn)
+	projectStruct, err := u.CreateProjectByAdapter(context.Background(), inFile, t, conn)
 	if err != nil {
 		ShowWindows(app, "Error", err.Error())
 		return

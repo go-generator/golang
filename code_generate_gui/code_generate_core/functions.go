@@ -7,7 +7,6 @@ import (
 	"unicode"
 
 	. "github.com/go-generator/metadata"
-	. "golang/code_generate_gui/code_generate_core/model"
 )
 
 func ToLower(s string) string {
